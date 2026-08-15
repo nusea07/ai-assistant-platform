@@ -20,6 +20,113 @@ def home():
 
 
 # ==========================================================
+# PRIVACY POLICY
+# ==========================================================
+
+@app.route("/privacy", methods=["GET"])
+def privacy_policy():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Privacy Policy</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 850px;
+                margin: 40px auto;
+                padding: 0 20px;
+                line-height: 1.6;
+                color: #222;
+            }
+
+            h1, h2 {
+                color: #111;
+            }
+
+            .updated {
+                color: #666;
+                margin-bottom: 30px;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <h1>Privacy Policy</h1>
+
+        <p class="updated">
+            Last updated: August 15, 2026
+        </p>
+
+        <p>
+            This Privacy Policy explains how the AI Assistant Platform
+            processes information when interacting with users through
+            Instagram messaging.
+        </p>
+
+        <h2>Information We Process</h2>
+
+        <p>
+            When a user sends a message to an Instagram account connected
+            to the AI Assistant Platform, the platform may process
+            information provided through that conversation, including
+            message content and technical identifiers required to respond
+            to the user.
+        </p>
+
+        <h2>How Information Is Used</h2>
+
+        <p>
+            Information is processed only for purposes such as responding
+            to user questions, providing information about products or
+            services, maintaining conversation context, and transferring
+            requests to a human representative when necessary.
+        </p>
+
+        <h2>Third-Party Services</h2>
+
+        <p>
+            The platform may use third-party services required for its
+            operation, including Meta APIs, hosting providers, and
+            artificial intelligence services.
+        </p>
+
+        <h2>Data Retention</h2>
+
+        <p>
+            Information is retained only as necessary for the operation,
+            testing, maintenance, and improvement of the assistant,
+            subject to applicable requirements.
+        </p>
+
+        <h2>Data Deletion</h2>
+
+        <p>
+            Users may request deletion of information associated with
+            their interaction with the platform by contacting the
+            application operator.
+        </p>
+
+        <h2>Contact</h2>
+
+        <p>
+            For privacy-related questions or data deletion requests,
+            please contact:
+        </p>
+
+        <p>
+            Email: sochina.nadejda@gmail.com
+        </p>
+
+    </body>
+    </html>
+    """, 200
+
+
+# ==========================================================
 # WEBHOOK VERIFICATION
 # ==========================================================
 
@@ -210,8 +317,6 @@ def receive_webhook(client_id: str):
                 if not message_data:
                     continue
 
-                # Echo = сообщение,
-                # отправленное самим бизнесом.
                 if message_data.get(
                     "is_echo"
                 ):
@@ -225,8 +330,6 @@ def receive_webhook(client_id: str):
                     or ""
                 ).strip()
 
-                # Пока обрабатываем только текст.
-                # Фото подключим через vision_service.py.
                 if not message_text:
 
                     attachments = (
@@ -280,8 +383,6 @@ def receive_webhook(client_id: str):
                     )
                 )
 
-                # Например клиент отправил
-                # только ссылку на товар.
                 if not assistant_response:
 
                     print(
@@ -316,7 +417,6 @@ def receive_webhook(client_id: str):
             f"{error}"
         )
 
-    # Meta ожидает быстрый 200 OK.
     return "EVENT_RECEIVED", 200
 
 
