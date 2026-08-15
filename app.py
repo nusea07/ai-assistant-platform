@@ -20,7 +20,7 @@ def home():
 
 
 # ==========================================================
-# PRIVACY POLICY
+# GENERAL PRIVACY POLICY
 # ==========================================================
 
 @app.route("/privacy", methods=["GET"])
@@ -32,6 +32,7 @@ def privacy_policy():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Privacy Policy</title>
+
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -119,6 +120,176 @@ def privacy_policy():
 
         <p>
             Email: sochina.nadejda@gmail.com
+        </p>
+
+    </body>
+    </html>
+    """, 200
+
+
+# ==========================================================
+# ENERGY FITNESS PRIVACY POLICY
+# ==========================================================
+
+@app.route("/privacy/energy_fitness", methods=["GET"])
+def energy_privacy_policy():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ENERGY Fitness - Privacy Policy</title>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 850px;
+                margin: 40px auto;
+                padding: 0 20px;
+                line-height: 1.6;
+                color: #222;
+            }
+
+            h1, h2 {
+                color: #111;
+            }
+
+            .updated {
+                color: #666;
+                margin-bottom: 30px;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <h1>ENERGY Fitness AI Assistant — Privacy Policy</h1>
+
+        <p class="updated">
+            Last updated: August 15, 2026
+        </p>
+
+        <p>
+            This Privacy Policy explains how the ENERGY Fitness AI Assistant
+            processes information when users interact with the assistant
+            through Instagram messaging.
+        </p>
+
+        <h2>Information We Process</h2>
+
+        <p>
+            When you contact ENERGY Fitness through Instagram, the assistant
+            may process the content of your messages and technical identifiers
+            required to receive and respond to the conversation.
+        </p>
+
+        <h2>How Information Is Used</h2>
+
+        <p>
+            Information may be used to answer questions about ENERGY Fitness,
+            provide information about services and training, maintain
+            conversation context, and transfer a request to a human
+            representative when necessary.
+        </p>
+
+        <h2>Third-Party Services</h2>
+
+        <p>
+            The assistant may use third-party services necessary for its
+            operation, including Meta APIs, hosting infrastructure, and
+            artificial intelligence services.
+        </p>
+
+        <h2>Data Retention</h2>
+
+        <p>
+            Information is retained only when necessary for operation,
+            maintenance, testing, security, and improvement of the assistant.
+        </p>
+
+        <h2>Data Deletion</h2>
+
+        <p>
+            Users may request deletion of information associated with their
+            interaction with the ENERGY Fitness AI Assistant.
+        </p>
+
+        <p>
+            Data deletion instructions are available at:
+            /data-deletion/energy_fitness
+        </p>
+
+        <h2>Contact</h2>
+
+        <p>
+            For privacy questions or data deletion requests, contact:
+        </p>
+
+        <p>
+            Email: sochina.nadejda@gmail.com
+        </p>
+
+    </body>
+    </html>
+    """, 200
+
+
+# ==========================================================
+# ENERGY FITNESS DATA DELETION
+# ==========================================================
+
+@app.route("/data-deletion/energy_fitness", methods=["GET"])
+def energy_data_deletion():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ENERGY Fitness - Data Deletion</title>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 850px;
+                margin: 40px auto;
+                padding: 0 20px;
+                line-height: 1.6;
+                color: #222;
+            }
+
+            h1, h2 {
+                color: #111;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <h1>ENERGY Fitness AI Assistant — Data Deletion</h1>
+
+        <p>
+            You may request deletion of data associated with your interaction
+            with the ENERGY Fitness AI Assistant.
+        </p>
+
+        <h2>How to request deletion</h2>
+
+        <p>
+            Send an email to:
+            <strong>sochina.nadejda@gmail.com</strong>
+        </p>
+
+        <p>
+            Please write “ENERGY Fitness Data Deletion Request”
+            in the subject line and provide enough information
+            to identify the relevant interaction.
+        </p>
+
+        <p>
+            After the request is verified, applicable stored information
+            associated with the interaction will be deleted.
         </p>
 
     </body>
@@ -296,8 +467,7 @@ def receive_webhook(client_id: str):
 
                 if (
                     business_account_id
-                    and sender_id
-                    == business_account_id
+                    and sender_id == business_account_id
                 ):
                     print(
                         f"[{client_id}] "
@@ -340,7 +510,6 @@ def receive_webhook(client_id: str):
                     )
 
                     if attachments:
-
                         print(
                             f"[{client_id}] "
                             "Получено вложение. "
@@ -376,9 +545,7 @@ def receive_webhook(client_id: str):
                 assistant_response = (
                     process_message_text(
                         client_id=client_id,
-                        instagram_user_id=(
-                            sender_id
-                        ),
+                        instagram_user_id=sender_id,
                         message=message_text,
                     )
                 )
@@ -404,9 +571,7 @@ def receive_webhook(client_id: str):
                 send_instagram_message(
                     client_id=client_id,
                     recipient_id=sender_id,
-                    message=(
-                        assistant_response
-                    ),
+                    message=assistant_response,
                 )
 
     except Exception as error:
@@ -421,7 +586,7 @@ def receive_webhook(client_id: str):
 
 
 # ==========================================================
-# LOCAL TEST
+# LOCAL / RENDER TEST
 # ==========================================================
 
 @app.route(
