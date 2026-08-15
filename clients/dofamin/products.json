@@ -1,0 +1,123 @@
+[
+  {
+    "article": "49157",
+    "name": "Cannolo SM Natural",
+    "vision_key": "cannolo_sm_natural",
+    "aliases": [
+      "Cannolo",
+      "Cannolo SM",
+      "Cannolo SM Natural",
+      "сумка Cannolo",
+      "бежевая сумка",
+      "geanta Cannolo",
+      "geanta bej",
+      "geantă bej"
+    ],
+    "url": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+    "price": 18750,
+    "currency": "MDL",
+    "colors": [
+      "natural"
+    ],
+    "sizes": [
+      "ONE SIZE"
+    ],
+    "stock": {
+      "natural": [
+        "ONE SIZE"
+      ]
+    },
+    "available": true
+  },
+  {
+    "article": "52206",
+    "name": "Ruslan Baginskiy Monogram-Embellished Canotier Hat in Beige",
+    "vision_key": "ruslan_baginskiy_hat_beige",
+    "aliases": [
+      "Ruslan Baginskiy Hat",
+      "Canotier Hat",
+      "Hat in Beige",
+      "бежевая шляпа",
+      "шляпа Ruslan Baginskiy",
+      "palarie bej",
+      "pălărie bej",
+      "palarie Ruslan Baginskiy"
+    ],
+    "url": "https://dofamin.md/catalog/product/ruslan-baginskiy-monogram-embellished-canotier-hat-in-beige",
+    "price": 10700,
+    "currency": "MDL",
+    "colors": [
+      "beige"
+    ],
+    "sizes": [
+      "L"
+    ],
+    "stock": {
+      "beige": [
+        "L"
+      ]
+    },
+    "available": true
+  },
+  {
+    "article": "58510",
+    "name": "Crepe Dress in Red",
+    "vision_key": "crepe_dress_red",
+    "aliases": [
+      "Crepe Dress",
+      "Crepe Dress in Red",
+      "red dress",
+      "красное платье",
+      "платье Crepe",
+      "rochie rosie",
+      "rochia rosie",
+      "rochie Crepe"
+    ],
+    "url": "https://dofamin.md/catalog/product/dress-41-red",
+    "price": 39000,
+    "currency": "MDL",
+    "colors": [
+      "red"
+    ],
+    "sizes": [
+      "40"
+    ],
+    "stock": {
+      "red": [
+        "40"
+      ]
+    },
+    "available": true
+  },
+  {
+    "article": "51599",
+    "name": "Esme Jeans in Indigo Contrast",
+    "vision_key": "esme_jeans_indigo_contrast",
+    "aliases": [
+      "Esme Jeans",
+      "Esme Jeans in Indigo Contrast",
+      "джинсы Esme",
+      "джинсы",
+      "blugi Esme",
+      "blugi",
+      "jeans Esme"
+    ],
+    "url": "https://dofamin.md/catalog/product/esme-jeans-in-indigo-contrast",
+    "price": 3850,
+    "currency": "MDL",
+    "colors": [
+      "indigo"
+    ],
+    "sizes": [
+      "38",
+      "40"
+    ],
+    "stock": {
+      "indigo": [
+        "38",
+        "40"
+      ]
+    },
+    "available": true
+  }
+]

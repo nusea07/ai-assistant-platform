@@ -1,0 +1,369 @@
+{
+  "dofamin": {
+    "test123": {
+      "current_product": {
+        "article": "49157",
+        "name": "Cannolo SM Natural",
+        "vision_key": "cannolo_sm_natural",
+        "aliases": [
+          "Cannolo",
+          "Cannolo SM",
+          "Cannolo SM Natural",
+          "сумка Cannolo",
+          "бежевая сумка",
+          "geanta Cannolo",
+          "geanta bej",
+          "geantă bej"
+        ],
+        "url": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+        "price": 18750,
+        "currency": "MDL",
+        "colors": [
+          "natural"
+        ],
+        "sizes": [
+          "ONE SIZE"
+        ],
+        "stock": {
+          "natural": [
+            "ONE SIZE"
+          ]
+        },
+        "available": true
+      },
+      "history": [
+        {
+          "role": "user",
+          "text": "Сколько лет магазину DOFAMIN?",
+          "timestamp": "2026-08-15T07:38:11.859836+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Сейчас не удалось проверить эту информацию. Лучше уточнить вопрос у сотрудника.",
+          "timestamp": "2026-08-15T07:38:14.241421+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Сколько лет магазину DOFAMIN?",
+          "timestamp": "2026-08-15T07:39:48.445524+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Сейчас не удалось проверить эту информацию. Лучше уточнить вопрос у сотрудника.",
+          "timestamp": "2026-08-15T07:39:49.260817+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Сколько лет магазину DOFAMIN?",
+          "timestamp": "2026-08-15T07:46:56.753940+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Мне не удалось найти подтверждённую информацию. Лучше уточнить этот вопрос у сотрудника.",
+          "timestamp": "2026-08-15T07:47:12.808800+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Сколько стоит Cannolo SM Natural?",
+          "timestamp": "2026-08-15T07:51:06.896236+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Cannolo SM Natural стоит 18 750 MDL.",
+          "timestamp": "2026-08-15T07:51:09.318402+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T07:51:09.318410+00:00"
+    },
+    "memory_test": {
+      "current_product": {
+        "article": "49157",
+        "name": "Cannolo SM Natural",
+        "vision_key": "cannolo_sm_natural",
+        "aliases": [
+          "Cannolo",
+          "Cannolo SM",
+          "Cannolo SM Natural",
+          "сумка Cannolo",
+          "бежевая сумка",
+          "geanta Cannolo",
+          "geanta bej",
+          "geantă bej"
+        ],
+        "url": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+        "price": 18750,
+        "currency": "MDL",
+        "colors": [
+          "natural"
+        ],
+        "sizes": [
+          "ONE SIZE"
+        ],
+        "stock": {
+          "natural": [
+            "ONE SIZE"
+          ]
+        },
+        "available": true
+      },
+      "history": [
+        {
+          "role": "user",
+          "text": "Cannolo SM Natural",
+          "timestamp": "2026-08-15T07:51:56.857474+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Что вас интересует по Cannolo SM Natural? 😊",
+          "timestamp": "2026-08-15T07:52:02.446529+00:00"
+        },
+        {
+          "role": "user",
+          "text": "А в каком размере?",
+          "timestamp": "2026-08-15T07:52:21.971436+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "В размере ONE SIZE.",
+          "timestamp": "2026-08-15T07:52:23.690902+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T07:52:23.690913+00:00"
+    },
+    "link_test": {
+      "current_product": {
+        "article": "49157",
+        "name": "Cannolo SM Natural",
+        "vision_key": "cannolo_sm_natural",
+        "aliases": [
+          "Cannolo",
+          "Cannolo SM",
+          "Cannolo SM Natural",
+          "сумка Cannolo",
+          "бежевая сумка",
+          "geanta Cannolo",
+          "geanta bej",
+          "geantă bej"
+        ],
+        "url": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+        "price": 18750,
+        "currency": "MDL",
+        "colors": [
+          "natural"
+        ],
+        "sizes": [
+          "ONE SIZE"
+        ],
+        "stock": {
+          "natural": [
+            "ONE SIZE"
+          ]
+        },
+        "available": true
+      },
+      "history": [
+        {
+          "role": "user",
+          "text": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+          "timestamp": "2026-08-15T07:53:11.267626+00:00"
+        },
+        {
+          "role": "user",
+          "text": "А сколько она стоит?",
+          "timestamp": "2026-08-15T07:53:24.642201+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Сумка Cannolo SM Natural стоит 18 750 MDL.",
+          "timestamp": "2026-08-15T07:53:27.830913+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T07:53:27.830920+00:00"
+    },
+    "order_test": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Хочу оформить заказ",
+          "timestamp": "2026-08-15T07:54:51.465507+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Конечно 🤍 Я передам ваш запрос сотруднику DOFAMIN.",
+          "timestamp": "2026-08-15T07:54:51.467267+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T07:54:51.467277+00:00"
+    },
+    "904708056023659": {
+      "current_product": {
+        "article": "49157",
+        "name": "Cannolo SM Natural",
+        "vision_key": "cannolo_sm_natural",
+        "aliases": [
+          "Cannolo",
+          "Cannolo SM",
+          "Cannolo SM Natural",
+          "сумка Cannolo",
+          "бежевая сумка",
+          "geanta Cannolo",
+          "geanta bej",
+          "geantă bej"
+        ],
+        "url": "https://dofamin.md/catalog/product/cannolo-sm-natural",
+        "price": 18750,
+        "currency": "MDL",
+        "colors": [
+          "natural"
+        ],
+        "sizes": [
+          "ONE SIZE"
+        ],
+        "stock": {
+          "natural": [
+            "ONE SIZE"
+          ]
+        },
+        "available": true
+      },
+      "history": [
+        {
+          "role": "user",
+          "text": "Здравствуйте! Сколько стоит Cannolo SM Natural?",
+          "timestamp": "2026-08-15T08:17:59.708502+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Здравствуйте! Cannolo SM Natural стоит 18 750 MDL.",
+          "timestamp": "2026-08-15T08:18:02.158958+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Здравствуйте",
+          "timestamp": "2026-08-15T08:25:02.410840+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Здравствуйте! Чем можем помочь? 😊",
+          "timestamp": "2026-08-15T08:25:06.371924+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Сколько у вас стоит шляпа",
+          "timestamp": "2026-08-15T08:25:18.091876+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Точной информации о цене шляпы сейчас нет. Пришлите фото или название модели — уточним 😊",
+          "timestamp": "2026-08-15T08:25:20.653483+00:00"
+        },
+        {
+          "role": "user",
+          "text": "Красная такая",
+          "timestamp": "2026-08-15T08:25:35.602306+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Пришлите, пожалуйста, фото красной шляпы или название модели — так сможем уточнить цену 😊",
+          "timestamp": "2026-08-15T08:25:42.436708+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T08:25:42.436719+00:00"
+    },
+    "28881755784745399": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Здравствуйте!",
+          "timestamp": "2026-08-15T08:50:38.373574+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Здравствуйте! Чем можем помочь? 😊",
+          "timestamp": "2026-08-15T08:50:41.429805+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T08:50:41.429818+00:00"
+    },
+    "1621826899655933": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Привет",
+          "timestamp": "2026-08-15T09:01:39.809618+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Привет! Чем можем помочь? 😊",
+          "timestamp": "2026-08-15T09:01:41.169911+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T09:01:41.169923+00:00"
+    },
+    "1850707066338784": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Привет",
+          "timestamp": "2026-08-15T09:16:41.694770+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Привет! Чем можем помочь? 😊",
+          "timestamp": "2026-08-15T09:16:45.020103+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T09:16:45.020116+00:00"
+    }
+  },
+  "altamare": {
+    "altamare_test": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Во сколько вы закрываетесь?",
+          "timestamp": "2026-08-15T08:45:44.439874+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Мы закрываемся в 22:00. Работаем ежедневно с 12:00 до 22:00.",
+          "timestamp": "2026-08-15T08:45:47.671659+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T08:45:47.671669+00:00"
+    }
+  },
+  "energy_fitness": {
+    "energy_test": {
+      "current_product": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "Хочу начать ходить в зал, что посоветуете?",
+          "timestamp": "2026-08-15T10:51:36.697489+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Отличное решение 💪 Подскажите, какая у вас цель: похудеть, набрать мышечную массу, улучшить выносливость или просто поддерживать форму? И был ли раньше опыт тренировок в зале?",
+          "timestamp": "2026-08-15T10:51:40.742407+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-15T10:51:40.742422+00:00"
+    }
+  }
+}
