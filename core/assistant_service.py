@@ -2,11 +2,14 @@ import re
 
 from core.conversation_memory import (
     add_message,
+    clear_pending_product_question,
     clear_state,
     get_conversation_context,
     get_current_product,
+    get_pending_product_question,
     get_state,
     set_current_product,
+    set_pending_product_question,
     set_state,
     start_new_product_context,
 )
@@ -70,14 +73,17 @@ PRODUCT_QUESTION_CUES = {
     "цена",
     "стоит",
     "стоимость",
+    "сколько",
     "размер",
     "размеры",
     "цвет",
     "цвета",
     "наличие",
     "в наличии",
+    "есть",
     "материал",
     "состав",
+    "ссылка",
     "pret",
     "preț",
     "costa",
@@ -94,11 +100,12 @@ PRODUCT_QUESTION_CUES = {
     "available",
     "availability",
     "material",
+    "link",
 }
 
 
 # ==========================================================
-# TEXT HELPERS
+# HELPERS
 # ==========================================================
 
 def normalize_text(
@@ -113,6 +120,17 @@ def normalize_text(
         r"\s+",
         " ",
         text,
+    )
+
+
+def contains_any(
+    text: str,
+    phrases: set[str],
+) -> bool:
+
+    return any(
+        phrase in text
+        for phrase in phrases
     )
 
 
@@ -166,25 +184,10 @@ def is_link_only(
     if not url:
         return False
 
-    text_without_url = (
+    return not bool(
         get_text_without_url(
             message
         )
-    )
-
-    return not bool(
-        text_without_url
-    )
-
-
-def contains_any(
-    text: str,
-    phrases: set[str],
-) -> bool:
-
-    return any(
-        phrase in text
-        for phrase in phrases
     )
 
 
@@ -196,14 +199,12 @@ def get_product_article(
     product: dict,
 ) -> str:
 
-    possible_keys = (
+    for key in (
         "article",
         "product_code",
         "code",
         "id",
-    )
-
-    for key in possible_keys:
+    ):
 
         value = product.get(
             key
@@ -222,10 +223,6 @@ def find_product_by_article(
     client_id: str,
     article: str,
 ) -> dict | None:
-    """
-    Находит полный объект товара в products.json
-    по внутреннему артикулу Vision.
-    """
 
     article = str(
         article or ""
@@ -248,16 +245,13 @@ def find_product_by_article(
         ):
             continue
 
-        product_article = (
+        if (
             get_product_article(
                 product
             )
-        )
-
-        if (
-            product_article
             == article
         ):
+
             return product
 
     return None
@@ -267,12 +261,6 @@ def sanitize_answer(
     answer: str,
     product: dict | None,
 ) -> str:
-    """
-    Финальная защита.
-
-    Артикул существует только внутри системы.
-    Клиент не должен его видеть.
-    """
 
     answer = (
         answer or ""
@@ -298,10 +286,6 @@ def sanitize_answer(
             "name",
             "",
         )
-        or product.get(
-            "title",
-            "",
-        )
         or ""
     ).strip()
 
@@ -310,42 +294,16 @@ def sanitize_answer(
         and article in answer
     ):
 
-        if name:
-
-            answer = answer.replace(
-                article,
-                name,
-            )
-
-        else:
-
-            answer = answer.replace(
-                article,
-                "этого товара",
-            )
-
-    # Убираем потенциально некрасивые конструкции
-    # после замены артикула.
-
-    answer = re.sub(
-        r"\bс артикулом\s+этого товара\b",
-        "этого товара",
-        answer,
-        flags=re.IGNORECASE,
-    )
-
-    answer = re.sub(
-        r"\bартикул(?:ом)?\s*[:\-]?\s*",
-        "",
-        answer,
-        flags=re.IGNORECASE,
-    )
+        answer = answer.replace(
+            article,
+            name or "этого товара",
+        )
 
     return answer.strip()
 
 
 # ==========================================================
-# PRODUCT MEMORY
+# MEMORY LOGIC
 # ==========================================================
 
 def should_use_product_memory(
@@ -367,17 +325,32 @@ def should_use_product_memory(
     if words.intersection(
         PRODUCT_REFERENCE_CUES
     ):
-
         return True
 
     if contains_any(
         normalized,
         PRODUCT_QUESTION_CUES,
     ):
-
         return True
 
     return False
+
+
+def looks_like_product_question(
+    message: str,
+) -> bool:
+
+    normalized = normalize_text(
+        message
+    )
+
+    if not normalized:
+        return False
+
+    return contains_any(
+        normalized,
+        PRODUCT_QUESTION_CUES,
+    )
 
 
 # ==========================================================
@@ -398,9 +371,9 @@ def looks_like_short_location(
     if "?" in message:
         return False
 
-    words = normalized.split()
-
-    if len(words) > 5:
+    if len(
+        normalized.split()
+    ) > 5:
         return False
 
     if contains_any(
@@ -444,20 +417,6 @@ def process_link_only(
             client_id=client_id,
             instagram_user_id=instagram_user_id,
             product=product,
-        )
-
-        print(
-            f"🔗 [{client_id}] "
-            "Товар по ссылке сохранён: "
-            f"{product.get('name')}"
-        )
-
-    else:
-
-        print(
-            f"🔗 [{client_id}] "
-            "Получена ссылка, "
-            "но товар не найден."
         )
 
     return {
@@ -506,19 +465,6 @@ def process_delivery_state(
             text=message,
         )
 
-        delivery_context = (
-            conversation_context
-            + "\n\n"
-            + "ВАЖНЫЙ КОНТЕКСТ: "
-            + "в предыдущем сообщении "
-            + "ассистент уточнял город "
-            + "или страну доставки. "
-            + f"Клиент ответил: {message}. "
-            + "Ответь именно про доставку. "
-            + "Не переходи к предыдущему "
-            + "товару без причины."
-        )
-
         result = route_message(
             client_id=client_id,
             message=(
@@ -526,7 +472,11 @@ def process_delivery_state(
                 + message
             ),
             current_product=None,
-            conversation_context=delivery_context,
+            conversation_context=(
+                conversation_context
+                + "\nКлиент отвечает "
+                + "на вопрос о доставке."
+            ),
         )
 
         answer = result.get(
@@ -554,7 +504,7 @@ def process_delivery_state(
 
 
 # ==========================================================
-# MAIN PROCESSING
+# MAIN
 # ==========================================================
 
 def process_message(
@@ -579,9 +529,7 @@ def process_message(
     if not client_id:
 
         return {
-            "answer": (
-                "Не удалось определить бизнес."
-            ),
+            "answer": "Не удалось определить бизнес.",
             "route": "error",
             "product": None,
             "handoff": False,
@@ -590,16 +538,14 @@ def process_message(
     if not instagram_user_id:
 
         return {
-            "answer": (
-                "Не удалось определить клиента."
-            ),
+            "answer": "Не удалось определить клиента.",
             "route": "error",
             "product": None,
             "handoff": False,
         }
 
     # ======================================================
-    # VISION PRODUCT HAS ABSOLUTE PRIORITY
+    # PRODUCT FROM VISION
     # ======================================================
 
     recognized_product = None
@@ -608,8 +554,8 @@ def process_message(
 
         recognized_product = (
             find_product_by_article(
-                client_id=client_id,
-                article=recognized_article,
+                client_id,
+                recognized_article,
             )
         )
 
@@ -619,45 +565,65 @@ def process_message(
                 client_id=client_id,
                 instagram_user_id=instagram_user_id,
                 product=recognized_product,
-            )
-
-            print(
-                "👁 VISION PRODUCT ACTIVATED: "
-                f"{recognized_product.get('name')}"
-            )
-
-        else:
-
-            print(
-                "⚠️ Vision recognized article "
-                f"{recognized_article}, "
-                "but product was not found "
-                "in products.json"
+                preserve_pending_question=True,
             )
 
     # ======================================================
-    # EMPTY MESSAGE
+    # IF PHOTO CAME WITHOUT TEXT
+    # USE PREVIOUS PENDING QUESTION
+    # ======================================================
+
+    pending_question = (
+        get_pending_product_question(
+            client_id,
+            instagram_user_id,
+        )
+    )
+
+    if (
+        recognized_product
+        and not message
+        and pending_question
+    ):
+
+        print(
+            "📌 USING PENDING QUESTION: "
+            f"{pending_question}"
+        )
+
+        message = pending_question
+
+        clear_pending_product_question(
+            client_id,
+            instagram_user_id,
+        )
+
+    # Фото есть, но вопроса до этого не было.
+    if (
+        recognized_product
+        and not message
+    ):
+
+        message = (
+            "Что можно рассказать "
+            "об этом товаре?"
+        )
+
+    # ======================================================
+    # EMPTY
     # ======================================================
 
     if not message:
 
-        if recognized_product:
-
-            message = (
-                "Как называется этот товар?"
-            )
-
-        else:
-
-            return {
-                "answer": "",
-                "route": "empty",
-                "product": None,
-                "handoff": False,
-            }
+        return {
+            "answer": "",
+            "route": "empty",
+            "product": None,
+            "handoff": False,
+        }
 
     # ======================================================
-    # LINK ONLY
+    # LINK
     # ======================================================
 
     if (
@@ -684,13 +650,6 @@ def process_message(
         )
     )
 
-    # ======================================================
-    # DELIVERY
-    #
-    # Если пришла новая фотография,
-    # delivery state уже был сброшен.
-    # ======================================================
-
     if not recognized_product:
 
         delivery_result = (
@@ -706,7 +665,7 @@ def process_message(
             return delivery_result
 
     # ======================================================
-    # SELECT PRODUCT
+    # PRODUCT SELECTION
     # ======================================================
 
     if recognized_product:
@@ -737,7 +696,32 @@ def process_message(
             product_for_router = None
 
     # ======================================================
-    # SAVE USER MESSAGE
+    # IMPORTANT:
+    # if question is about a product,
+    # but we don't know which product,
+    # save it for the next photo.
+    # ======================================================
+
+    if (
+        product_for_router is None
+        and looks_like_product_question(
+            message
+        )
+    ):
+
+        set_pending_product_question(
+            client_id=client_id,
+            instagram_user_id=instagram_user_id,
+            question=message,
+        )
+
+        print(
+            "📌 PENDING PRODUCT QUESTION SAVED: "
+            f"{message}"
+        )
+
+    # ======================================================
+    # SAVE USER
     # ======================================================
 
     add_message(
@@ -767,10 +751,6 @@ def process_message(
         "product"
     )
 
-    # Если router почему-то не вернул product,
-    # но Vision уже определил его,
-    # сохраняем recognized_product.
-
     if (
         not isinstance(
             found_product,
@@ -798,8 +778,13 @@ def process_message(
             product=found_product,
         )
 
+        clear_pending_product_question(
+            client_id,
+            instagram_user_id,
+        )
+
     # ======================================================
-    # NEVER SHOW ARTICLE TO CUSTOMER
+    # CLEAN ARTICLE
     # ======================================================
 
     answer = sanitize_answer(
@@ -837,7 +822,7 @@ def process_message(
         )
 
     # ======================================================
-    # SAVE ASSISTANT MESSAGE
+    # SAVE ASSISTANT
     # ======================================================
 
     if answer:
@@ -849,13 +834,8 @@ def process_message(
             text=answer,
         )
 
-    # ======================================================
-    # DEBUG
-    # ======================================================
-
     print(
-        "\n"
-        "======================================"
+        "\n======================================"
     )
 
     print(
@@ -877,6 +857,13 @@ def process_message(
             f"{recognized_article}"
         )
 
+    if pending_question:
+
+        print(
+            "📌 PENDING QUESTION: "
+            f"{pending_question}"
+        )
+
     print(
         "🧭 ROUTE: "
         f"{result.get('route')}"
@@ -894,15 +881,14 @@ def process_message(
     )
 
     print(
-        "======================================"
-        "\n"
+        "======================================\n"
     )
 
     return result
 
 
 # ==========================================================
-# TEXT ONLY WRAPPER
+# WRAPPER
 # ==========================================================
 
 def process_message_text(

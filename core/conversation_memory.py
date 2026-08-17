@@ -31,10 +31,6 @@ _file_lock = threading.Lock()
 # ==========================================================
 
 def ensure_storage() -> None:
-    """
-    Создаёт папку data и conversations.json,
-    если их ещё нет.
-    """
 
     DATA_DIR.mkdir(
         parents=True,
@@ -61,9 +57,13 @@ def load_conversations() -> dict:
 
         try:
 
-            text = CONVERSATIONS_FILE.read_text(
-                encoding="utf-8"
-            ).strip()
+            text = (
+                CONVERSATIONS_FILE
+                .read_text(
+                    encoding="utf-8"
+                )
+                .strip()
+            )
 
             if not text:
                 return {}
@@ -91,14 +91,12 @@ def load_conversations() -> dict:
 def save_conversations(
     conversations: dict,
 ) -> None:
-    """
-    Сохраняет данные через временный файл.
-    """
 
     ensure_storage()
 
     temp_file = (
-        CONVERSATIONS_FILE.with_suffix(
+        CONVERSATIONS_FILE
+        .with_suffix(
             ".tmp"
         )
     )
@@ -130,7 +128,7 @@ def save_conversations(
 
 
 # ==========================================================
-# INTERNAL HELPERS
+# HELPERS
 # ==========================================================
 
 def get_timestamp() -> str:
@@ -166,26 +164,37 @@ def ensure_conversation(
         ]
     )
 
-    if instagram_user_id not in (
-        client_conversations
-    ):
+    if instagram_user_id not in client_conversations:
 
         client_conversations[
             instagram_user_id
         ] = {
             "current_product": None,
+            "pending_product_question": None,
             "history": [],
             "state": None,
             "updated_at": get_timestamp(),
         }
 
-    return client_conversations[
+    memory = client_conversations[
         instagram_user_id
     ]
 
+    # Для старых conversations.json,
+    # где поля ещё не было.
+    if (
+        "pending_product_question"
+        not in memory
+    ):
+        memory[
+            "pending_product_question"
+        ] = None
+
+    return memory
+
 
 # ==========================================================
-# GET FULL MEMORY
+# MEMORY
 # ==========================================================
 
 def get_memory(
@@ -197,13 +206,11 @@ def get_memory(
         load_conversations()
     )
 
-    memory = ensure_conversation(
+    return ensure_conversation(
         conversations,
         client_id,
         instagram_user_id,
     )
-
-    return memory
 
 
 # ==========================================================
@@ -275,23 +282,37 @@ def clear_current_product(
 
 
 # ==========================================================
-# NEW PRODUCT CONTEXT
+# PENDING PRODUCT QUESTION
 # ==========================================================
 
-def start_new_product_context(
+def get_pending_product_question(
     client_id: str,
     instagram_user_id: str,
-    product: dict,
+) -> str | None:
+
+    memory = get_memory(
+        client_id,
+        instagram_user_id,
+    )
+
+    question = memory.get(
+        "pending_product_question"
+    )
+
+    if question:
+
+        return str(
+            question
+        ).strip()
+
+    return None
+
+
+def set_pending_product_question(
+    client_id: str,
+    instagram_user_id: str,
+    question: str | None,
 ) -> None:
-    """
-    Используется, когда товар был распознан
-    по новой фотографии / новой Story.
-
-    Новый товар получает абсолютный приоритет.
-
-    Старый товар, история про предыдущий товар
-    и временный state сбрасываются.
-    """
 
     conversations = (
         load_conversations()
@@ -303,13 +324,68 @@ def start_new_product_context(
         instagram_user_id,
     )
 
+    if question:
+
+        question = str(
+            question
+        ).strip()
+
+    memory[
+        "pending_product_question"
+    ] = question or None
+
+    memory[
+        "updated_at"
+    ] = get_timestamp()
+
+    save_conversations(
+        conversations
+    )
+
+
+def clear_pending_product_question(
+    client_id: str,
+    instagram_user_id: str,
+) -> None:
+
+    set_pending_product_question(
+        client_id=client_id,
+        instagram_user_id=instagram_user_id,
+        question=None,
+    )
+
+
+# ==========================================================
+# NEW PRODUCT CONTEXT
+# ==========================================================
+
+def start_new_product_context(
+    client_id: str,
+    instagram_user_id: str,
+    product: dict,
+    preserve_pending_question: bool = True,
+) -> None:
+
+    conversations = (
+        load_conversations()
+    )
+
+    memory = ensure_conversation(
+        conversations,
+        client_id,
+        instagram_user_id,
+    )
+
+    pending_question = memory.get(
+        "pending_product_question"
+    )
+
     memory[
         "current_product"
     ] = product
 
-    # Критически важно:
-    # новая фотография означает новый
-    # товарный контекст.
+    # Старый товарный диалог убираем,
+    # чтобы не появлялась старая шляпа.
     memory[
         "history"
     ] = []
@@ -317,6 +393,18 @@ def start_new_product_context(
     memory[
         "state"
     ] = None
+
+    if preserve_pending_question:
+
+        memory[
+            "pending_product_question"
+        ] = pending_question
+
+    else:
+
+        memory[
+            "pending_product_question"
+        ] = None
 
     memory[
         "updated_at"
@@ -333,7 +421,7 @@ def start_new_product_context(
 
 
 # ==========================================================
-# CONVERSATION STATE
+# STATE
 # ==========================================================
 
 def get_state(
@@ -400,7 +488,7 @@ def clear_state(
 
 
 # ==========================================================
-# MESSAGE HISTORY
+# HISTORY
 # ==========================================================
 
 def add_message(
@@ -487,7 +575,7 @@ def get_history(
 
 
 # ==========================================================
-# CONTEXT FOR OPENAI
+# CONTEXT
 # ==========================================================
 
 def get_conversation_context(
@@ -509,27 +597,24 @@ def get_conversation_context(
 
         role = item.get(
             "role",
-            "",
+            ""
         )
 
         text = item.get(
             "text",
-            "",
+            ""
         )
 
         if not text:
             continue
 
         if role == "user":
-
             label = "Клиент"
 
         elif role == "assistant":
-
             label = "Ассистент"
 
         else:
-
             label = role
 
         lines.append(
@@ -554,10 +639,8 @@ def clear_conversation(
         load_conversations()
     )
 
-    client_data = (
-        conversations.get(
-            client_id
-        )
+    client_data = conversations.get(
+        client_id
     )
 
     if not isinstance(

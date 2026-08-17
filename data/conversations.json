@@ -380,6 +380,61 @@
       ],
       "state": null,
       "updated_at": "2026-08-17T12:45:25.800216+00:00"
+    },
+    "pending_test": {
+      "current_product": {
+        "article": "34368",
+        "name": "BB White DRESS MONOGRAM",
+        "vision_key": "bb_white_dress_monogram",
+        "aliases": [
+          "BB White DRESS MONOGRAM",
+          "BB White Dress",
+          "BB Monogram Dress",
+          "White Monogram Dress",
+          "white dress",
+          "белое платье",
+          "белое мини платье",
+          "платье BB",
+          "платье Monogram",
+          "rochie alba",
+          "rochie albă",
+          "rochie BB"
+        ],
+        "url": "https://dofamin.md/catalog/product/bb-white-dress-monogram",
+        "price": 1190,
+        "old_price": 2380,
+        "discount": "50%",
+        "currency": "MDL",
+        "colors": [
+          "white"
+        ],
+        "sizes": [
+          "XS",
+          "S"
+        ],
+        "stock": {
+          "white": [
+            "XS",
+            "S"
+          ]
+        },
+        "available": true
+      },
+      "pending_product_question": null,
+      "history": [
+        {
+          "role": "user",
+          "text": "А такое у вас есть?",
+          "timestamp": "2026-08-17T13:57:40.817496+00:00"
+        },
+        {
+          "role": "assistant",
+          "text": "Да, такое платье есть в наличии 😊",
+          "timestamp": "2026-08-17T13:57:46.213512+00:00"
+        }
+      ],
+      "state": null,
+      "updated_at": "2026-08-17T13:57:46.213518+00:00"
     }
   },
   "altamare": {
