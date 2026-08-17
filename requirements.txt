@@ -3,7 +3,6 @@ gunicorn
 openai
 python-dotenv
 requests
-torch
-torchvision
-open_clip_torch
 Pillow
+onnxruntime
+numpy

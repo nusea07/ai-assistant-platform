@@ -1,56 +1,62 @@
 from pathlib import Path
 
-import torch
-import open_clip
+import numpy as np
+import onnxruntime as ort
 from PIL import Image
 
 
-MODEL_ID = "hf-hub:apple/MobileCLIP-S1-OpenCLIP"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+MODEL_PATH = (
+    PROJECT_ROOT
+    / "models"
+    / "mobileclip"
+    / "mobileclip-s0-visual.onnx"
+)
 
 
-model = None
-preprocess = None
+session = None
+input_name = None
 
 
 def load_model():
     """
-    Загружает MobileCLIP-S1 только при первом использовании.
+    Загружает ONNX vision-модель только при первом использовании.
     """
 
-    global model
-    global preprocess
+    global session
+    global input_name
 
-    if model is not None and preprocess is not None:
-        return model, preprocess
+    if session is not None:
+        return session
 
-    print("Loading MobileCLIP-S1...")
-
-    loaded_model, _, loaded_preprocess = (
-        open_clip.create_model_and_transforms(
-            MODEL_ID
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"ONNX model not found: {MODEL_PATH}"
         )
+
+    print("Loading MobileCLIP ONNX model...")
+
+    session = ort.InferenceSession(
+        str(MODEL_PATH),
+        providers=[
+            "CPUExecutionProvider"
+        ],
     )
 
-    loaded_model = loaded_model.to(device)
-    loaded_model.eval()
+    input_name = session.get_inputs()[0].name
 
-    model = loaded_model
-    preprocess = loaded_preprocess
+    print("MobileCLIP ONNX model loaded.")
+    print(f"Input name: {input_name}")
 
-    print(
-        f"MobileCLIP-S1 loaded on: {device}"
-    )
-
-    return model, preprocess
+    return session
 
 
-def create_image_embedding(
+def preprocess_image(
     image_path: str,
 ):
     """
-    Превращает изображение в нормализованный embedding.
+    Подготавливает изображение для MobileCLIP.
     """
 
     image_path = Path(image_path)
@@ -60,47 +66,161 @@ def create_image_embedding(
             f"Image not found: {image_path}"
         )
 
-    current_model, current_preprocess = (
-        load_model()
-    )
-
     image = Image.open(
         image_path
     ).convert("RGB")
 
-    image_tensor = (
-        current_preprocess(image)
-        .unsqueeze(0)
-        .to(device)
+    # MobileCLIP обычно работает с 256x256 / 224x224 input.
+    # Начинаем с 256 и проверим форму модели ниже.
+    image = image.resize(
+        (256, 256)
     )
 
-    with torch.no_grad():
+    image_array = np.asarray(
+        image,
+        dtype=np.float32,
+    )
 
-        embedding = (
-            current_model.encode_image(
-                image_tensor
-            )
+    # [H, W, C] -> [C, H, W]
+    image_array = np.transpose(
+        image_array,
+        (2, 0, 1),
+    )
+
+    # Нормализация в диапазон 0..1
+    image_array = (
+        image_array / 255.0
+    )
+
+    # CLIP normalization
+    mean = np.array(
+        [
+            0.48145466,
+            0.4578275,
+            0.40821073,
+        ],
+        dtype=np.float32,
+    ).reshape(3, 1, 1)
+
+    std = np.array(
+        [
+            0.26862954,
+            0.26130258,
+            0.27577711,
+        ],
+        dtype=np.float32,
+    ).reshape(3, 1, 1)
+
+    image_array = (
+        image_array - mean
+    ) / std
+
+    # [C, H, W] -> [1, C, H, W]
+    image_array = np.expand_dims(
+        image_array,
+        axis=0,
+    )
+
+    return image_array.astype(
+        np.float32
+    )
+
+
+def create_image_embedding(
+    image_path: str,
+):
+    """
+    Превращает изображение
+    в нормализованный embedding.
+    """
+
+    current_session = load_model()
+
+    image_tensor = preprocess_image(
+        image_path
+    )
+
+    outputs = current_session.run(
+        None,
+        {
+            input_name: image_tensor
+        },
+    )
+
+    embedding = outputs[0]
+
+    embedding = np.asarray(
+        embedding,
+        dtype=np.float32,
+    )
+
+    # Если модель вернула лишние измерения
+    embedding = embedding.reshape(
+        embedding.shape[0],
+        -1,
+    )
+
+    # L2 normalization
+    norm = np.linalg.norm(
+        embedding,
+        axis=1,
+        keepdims=True,
+    )
+
+    embedding = (
+        embedding
+        / np.clip(
+            norm,
+            1e-12,
+            None,
         )
+    )
 
-        embedding = (
-            embedding
-            / embedding.norm(
-                dim=-1,
-                keepdim=True,
-            )
-        )
-
-    return embedding.cpu()
+    return embedding
 
 
 if __name__ == "__main__":
 
     print(
-        f"Device: {device}"
+        "Testing MobileCLIP ONNX model..."
     )
 
-    load_model()
+    current_session = load_model()
 
     print(
-        "MobileCLIP embedding service loaded successfully."
+        "\nModel inputs:"
+    )
+
+    for model_input in (
+        current_session.get_inputs()
+    ):
+        print(
+            f"Name: {model_input.name}"
+        )
+        print(
+            f"Shape: {model_input.shape}"
+        )
+        print(
+            f"Type: {model_input.type}"
+        )
+
+    print(
+        "\nModel outputs:"
+    )
+
+    for model_output in (
+        current_session.get_outputs()
+    ):
+        print(
+            f"Name: {model_output.name}"
+        )
+        print(
+            f"Shape: {model_output.shape}"
+        )
+        print(
+            f"Type: {model_output.type}"
+        )
+
+    print(
+        "\nONNX model loaded successfully."
     )

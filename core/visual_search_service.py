@@ -1,12 +1,17 @@
 from pathlib import Path
 import pickle
 
-import torch
+import numpy as np
 
-from core.image_embedding_service import create_image_embedding
+from core.image_embedding_service import (
+    create_image_embedding,
+)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(
+    __file__
+).resolve().parent.parent
+
 
 VISUAL_INDEX_FILE = (
     PROJECT_ROOT
@@ -17,10 +22,15 @@ VISUAL_INDEX_FILE = (
 
 
 def load_visual_index():
+    """
+    Загружает заранее созданные embeddings
+    фотографий товаров DOFAMIN.
+    """
 
     if not VISUAL_INDEX_FILE.exists():
         raise FileNotFoundError(
-            f"Visual index not found: {VISUAL_INDEX_FILE}"
+            f"Visual index not found: "
+            f"{VISUAL_INDEX_FILE}"
         )
 
     with open(
@@ -28,7 +38,9 @@ def load_visual_index():
         "rb",
     ) as file:
 
-        visual_index = pickle.load(file)
+        visual_index = pickle.load(
+            file
+        )
 
     return visual_index
 
@@ -37,48 +49,80 @@ def search_similar_products(
     image_path: str,
     top_k: int = 3,
 ):
+    """
+    Ищет визуально похожие товары.
 
-    print("\nCreating embedding for test image...")
+    Возвращает TOP-K разных артикулов.
+    """
 
-    query_embedding = create_image_embedding(
-        image_path
+    print(
+        "\nCreating embedding "
+        "for test image..."
     )
 
-    visual_index = load_visual_index()
+    query_embedding = (
+        create_image_embedding(
+            image_path
+        )
+    )
+
+    visual_index = (
+        load_visual_index()
+    )
 
     print(
         f"Comparing with "
-        f"{len(visual_index)} catalog images..."
+        f"{len(visual_index)} "
+        f"catalog images..."
     )
 
-    # Здесь будем хранить лучший результат
-    # для каждого артикула.
+    # ==========================================
+    # BEST RESULT PER ARTICLE
+    # ==========================================
+
     product_scores = {}
 
     for item in visual_index:
 
-        article = item["article"]
-
-        catalog_embedding = item[
-            "embedding"
+        article = item[
+            "article"
         ]
 
-        similarity = torch.sum(
-            query_embedding
-            * catalog_embedding
-        ).item()
+        catalog_embedding = (
+            np.asarray(
+                item["embedding"],
+                dtype=np.float32,
+            )
+        )
 
-        current_best = product_scores.get(
-            article
+        # Оба embedding уже нормализованы.
+        # Поэтому dot product =
+        # cosine similarity.
+
+        similarity = float(
+            np.sum(
+                query_embedding
+                * catalog_embedding
+            )
+        )
+
+        current_best = (
+            product_scores.get(
+                article
+            )
         )
 
         if (
             current_best is None
             or similarity
-            > current_best["similarity"]
+            > current_best[
+                "similarity"
+            ]
         ):
 
-            product_scores[article] = {
+            product_scores[
+                article
+            ] = {
                 "article": article,
                 "similarity": similarity,
                 "matched_image": item[
@@ -86,9 +130,15 @@ def search_similar_products(
                 ],
             }
 
+    # ==========================================
+    # SORT
+    # ==========================================
+
     results = sorted(
         product_scores.values(),
-        key=lambda item: item["similarity"],
+        key=lambda item: (
+            item["similarity"]
+        ),
         reverse=True,
     )
 
