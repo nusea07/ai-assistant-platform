@@ -3,11 +3,13 @@ import json
 import mimetypes
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
+
 load_dotenv()
+
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
@@ -27,7 +29,9 @@ def image_to_data_url(
     в data URL для отправки в OpenAI.
     """
 
-    path = Path(image_path)
+    path = Path(
+        image_path
+    )
 
     if not path.exists():
         raise FileNotFoundError(
@@ -48,7 +52,9 @@ def image_to_data_url(
 
         encoded = base64.b64encode(
             file.read()
-        ).decode("utf-8")
+        ).decode(
+            "utf-8"
+        )
 
     return (
         f"data:{mime_type};"
@@ -65,9 +71,10 @@ def verify_product_with_vision(
         фотография клиента
 
     candidates:
-        TOP-кандидаты из CLIP
+        TOP-кандидаты из visual search
 
     Возвращает:
+
         {
             "article": "...",
             "result": "MATCH"
@@ -82,6 +89,7 @@ def verify_product_with_vision(
     """
 
     if not candidates:
+
         return {
             "article": None,
             "result": "NO_MATCH",
@@ -90,13 +98,19 @@ def verify_product_with_vision(
     content = []
 
     # ==========================================
-    # INSTRUCTIONS
+    # CANDIDATE ARTICLES
     # ==========================================
 
     candidate_articles = [
-        candidate["article"]
+        str(
+            candidate["article"]
+        )
         for candidate in candidates
     ]
+
+    # ==========================================
+    # INSTRUCTIONS
+    # ==========================================
 
     instruction = f"""
 You are verifying a product match for
@@ -191,16 +205,41 @@ NO MATCH example:
         start=1,
     ):
 
-        article = candidate[
-            "article"
-        ]
+        article = str(
+            candidate[
+                "article"
+            ]
+        )
+
+        # ======================================
+        # WINDOWS -> LINUX PATH FIX
+        # ======================================
+
+        matched_image = str(
+            candidate[
+                "matched_image"
+            ]
+        ).replace(
+            "\\",
+            "/",
+        )
 
         candidate_image_path = (
             PROJECT_ROOT
-            / candidate[
-                "matched_image"
-            ]
+            / matched_image
         )
+
+        if not candidate_image_path.exists():
+
+            print(
+                "Candidate image not found:"
+            )
+
+            print(
+                candidate_image_path
+            )
+
+            continue
 
         content.append(
             {
@@ -241,7 +280,8 @@ NO MATCH example:
     )
 
     raw_answer = (
-        response.output_text.strip()
+        response.output_text
+        .strip()
     )
 
     print(
@@ -277,26 +317,31 @@ NO MATCH example:
 
     except json.JSONDecodeError:
 
+        print(
+            "Vision returned invalid JSON."
+        )
+
         return {
             "article": None,
             "result": "NO_MATCH",
         }
 
     # ==========================================
-    # SECURITY CHECK
+    # SECURITY / VALIDATION
     # ==========================================
 
-    returned_article = (
-        result.get(
-            "article"
-        )
+    returned_article = result.get(
+        "article"
     )
 
-    result_type = (
-        result.get(
-            "result"
-        )
+    result_type = result.get(
+        "result"
     )
+
+    if returned_article is not None:
+        returned_article = str(
+            returned_article
+        )
 
     if result_type != "MATCH":
 
@@ -309,6 +354,11 @@ NO MATCH example:
         returned_article
         not in candidate_articles
     ):
+
+        print(
+            "Vision returned article "
+            "outside candidate list."
+        )
 
         return {
             "article": None,

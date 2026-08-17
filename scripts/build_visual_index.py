@@ -3,12 +3,21 @@ import pickle
 import sys
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(
+    __file__
+).resolve().parent.parent
 
-sys.path.append(str(PROJECT_ROOT))
+
+sys.path.append(
+    str(
+        PROJECT_ROOT
+    )
+)
 
 
-from core.image_embedding_service import create_image_embedding
+from core.image_embedding_service import (
+    create_image_embedding,
+)
 
 
 PRODUCT_IMAGES_DIR = (
@@ -18,11 +27,13 @@ PRODUCT_IMAGES_DIR = (
     / "product_images"
 )
 
+
 VISUAL_INDEX_DIR = (
     PROJECT_ROOT
     / "data"
     / "visual_index"
 )
+
 
 OUTPUT_FILE = (
     VISUAL_INDEX_DIR
@@ -40,15 +51,33 @@ SUPPORTED_EXTENSIONS = {
 
 def build_visual_index():
 
-    print("\n========================================")
-    print("BUILDING DOFAMIN VISUAL INDEX")
-    print("========================================\n")
+    print(
+        "\n========================================"
+    )
+
+    print(
+        "BUILDING DOFAMIN VISUAL INDEX"
+    )
+
+    print(
+        "========================================\n"
+    )
+
+    # ==========================================
+    # CHECK PRODUCT IMAGE DIRECTORY
+    # ==========================================
 
     if not PRODUCT_IMAGES_DIR.exists():
+
         raise FileNotFoundError(
-            f"Product images folder not found: "
+            f"Product images folder "
+            f"not found: "
             f"{PRODUCT_IMAGES_DIR}"
         )
+
+    # ==========================================
+    # CREATE OUTPUT DIRECTORY
+    # ==========================================
 
     VISUAL_INDEX_DIR.mkdir(
         parents=True,
@@ -57,13 +86,22 @@ def build_visual_index():
 
     visual_index = []
 
-    product_folders = [
-        folder
-        for folder in PRODUCT_IMAGES_DIR.iterdir()
-        if folder.is_dir()
-    ]
+    # ==========================================
+    # GET PRODUCT FOLDERS
+    # ==========================================
+
+    product_folders = sorted(
+        [
+            folder
+            for folder
+            in PRODUCT_IMAGES_DIR.iterdir()
+            if folder.is_dir()
+        ],
+        key=lambda folder: folder.name,
+    )
 
     if not product_folders:
+
         raise ValueError(
             "No product folders found."
         )
@@ -75,31 +113,49 @@ def build_visual_index():
 
     print()
 
+    # ==========================================
+    # PROCESS PRODUCTS
+    # ==========================================
+
     for product_folder in product_folders:
 
-        article = product_folder.name
-
-        print(
-            f"Processing article: {article}"
+        article = (
+            product_folder.name
         )
 
-        image_files = [
-            file
-            for file in product_folder.iterdir()
-            if (
-                file.is_file()
-                and file.suffix.lower()
-                in SUPPORTED_EXTENSIONS
-            )
-        ]
+        print(
+            f"Processing article: "
+            f"{article}"
+        )
+
+        image_files = sorted(
+            [
+                file
+                for file
+                in product_folder.iterdir()
+                if (
+                    file.is_file()
+                    and file.suffix.lower()
+                    in SUPPORTED_EXTENSIONS
+                )
+            ],
+            key=lambda file: file.name,
+        )
 
         if not image_files:
 
             print(
-                "  No images found. Skipping."
+                "  No images found. "
+                "Skipping."
             )
 
+            print()
+
             continue
+
+        # ======================================
+        # PROCESS EACH IMAGE
+        # ======================================
 
         for image_file in image_files:
 
@@ -111,34 +167,68 @@ def build_visual_index():
 
                 embedding = (
                     create_image_embedding(
-                        str(image_file)
+                        str(
+                            image_file
+                        )
                     )
+                )
+
+                # ==================================
+                # IMPORTANT:
+                # always save POSIX-style path
+                #
+                # clients/dofamin/...
+                #
+                # NOT:
+                #
+                # clients\\dofamin\\...
+                # ==================================
+
+                relative_image_path = (
+                    image_file
+                    .relative_to(
+                        PROJECT_ROOT
+                    )
+                    .as_posix()
                 )
 
                 visual_index.append(
                     {
-                        "article": article,
-                        "image_path": str(
-                            image_file.relative_to(
-                                PROJECT_ROOT
-                            )
+                        "article": (
+                            article
                         ),
-                        "embedding": embedding,
+                        "image_path": (
+                            relative_image_path
+                        ),
+                        "embedding": (
+                            embedding
+                        ),
                     }
                 )
 
             except Exception as error:
 
                 print(
-                    f"  ERROR: {error}"
+                    f"  ERROR: "
+                    f"{error}"
                 )
 
         print()
 
+    # ==========================================
+    # CHECK RESULTS
+    # ==========================================
+
     if not visual_index:
+
         raise ValueError(
-            "No image embeddings were created."
+            "No image embeddings "
+            "were created."
         )
+
+    # ==========================================
+    # SAVE INDEX
+    # ==========================================
 
     with open(
         OUTPUT_FILE,
@@ -149,6 +239,10 @@ def build_visual_index():
             visual_index,
             file,
         )
+
+    # ==========================================
+    # SUCCESS
+    # ==========================================
 
     print(
         "========================================"
@@ -177,4 +271,5 @@ def build_visual_index():
 
 
 if __name__ == "__main__":
+
     build_visual_index()
