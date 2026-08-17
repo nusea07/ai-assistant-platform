@@ -5,31 +5,52 @@ import open_clip
 from PIL import Image
 
 
-MODEL_NAME = "ViT-B-32"
-PRETRAINED = "laion2b_s34b_b79k"
-
+MODEL_ID = "hf-hub:apple/MobileCLIP-S1-OpenCLIP"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-model, _, preprocess = open_clip.create_model_and_transforms(
-    MODEL_NAME,
-    pretrained=PRETRAINED,
-)
-
-model = model.to(device)
-model.eval()
+model = None
+preprocess = None
 
 
-def create_image_embedding(image_path: str):
+def load_model():
     """
-    Превращает изображение в embedding-вектор.
+    Загружает MobileCLIP-S1 только при первом использовании.
+    """
 
-    image_path:
-        путь к изображению
+    global model
+    global preprocess
 
-    return:
-        torch.Tensor с нормализованным embedding
+    if model is not None and preprocess is not None:
+        return model, preprocess
+
+    print("Loading MobileCLIP-S1...")
+
+    loaded_model, _, loaded_preprocess = (
+        open_clip.create_model_and_transforms(
+            MODEL_ID
+        )
+    )
+
+    loaded_model = loaded_model.to(device)
+    loaded_model.eval()
+
+    model = loaded_model
+    preprocess = loaded_preprocess
+
+    print(
+        f"MobileCLIP-S1 loaded on: {device}"
+    )
+
+    return model, preprocess
+
+
+def create_image_embedding(
+    image_path: str,
+):
+    """
+    Превращает изображение в нормализованный embedding.
     """
 
     image_path = Path(image_path)
@@ -39,23 +60,34 @@ def create_image_embedding(image_path: str):
             f"Image not found: {image_path}"
         )
 
-    image = Image.open(image_path).convert("RGB")
+    current_model, current_preprocess = (
+        load_model()
+    )
 
-    image_tensor = preprocess(image)
+    image = Image.open(
+        image_path
+    ).convert("RGB")
 
-    image_tensor = image_tensor.unsqueeze(0)
-
-    image_tensor = image_tensor.to(device)
+    image_tensor = (
+        current_preprocess(image)
+        .unsqueeze(0)
+        .to(device)
+    )
 
     with torch.no_grad():
 
-        embedding = model.encode_image(
-            image_tensor
+        embedding = (
+            current_model.encode_image(
+                image_tensor
+            )
         )
 
-        embedding = embedding / embedding.norm(
-            dim=-1,
-            keepdim=True,
+        embedding = (
+            embedding
+            / embedding.norm(
+                dim=-1,
+                keepdim=True,
+            )
         )
 
     return embedding.cpu()
@@ -67,6 +99,8 @@ if __name__ == "__main__":
         f"Device: {device}"
     )
 
+    load_model()
+
     print(
-        "Image embedding service loaded successfully."
+        "MobileCLIP embedding service loaded successfully."
     )
