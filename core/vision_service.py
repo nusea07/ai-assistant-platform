@@ -7,26 +7,30 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from core.r2_service import (
+    generate_presigned_image_url,
+)
+
 
 load_dotenv()
 
 
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=os.getenv(
+        "OPENAI_API_KEY"
+    )
 )
-
-
-PROJECT_ROOT = Path(
-    __file__
-).resolve().parent.parent
 
 
 def image_to_data_url(
     image_path: str,
 ):
     """
-    Превращает локальную картинку
-    в data URL для отправки в OpenAI.
+    Превращает локальное изображение клиента
+    во временный base64 data URL.
+
+    Это используется для Story image,
+    которую мы уже скачали во временный файл.
     """
 
     path = Path(
@@ -38,8 +42,10 @@ def image_to_data_url(
             f"Image not found: {path}"
         )
 
-    mime_type, _ = mimetypes.guess_type(
-        path.name
+    mime_type, _ = (
+        mimetypes.guess_type(
+            path.name
+        )
     )
 
     if mime_type is None:
@@ -67,25 +73,27 @@ def verify_product_with_vision(
     candidates: list,
 ):
     """
-    query_image_path:
-        фотография клиента
+    Финальная Vision-проверка.
 
-    candidates:
-        TOP-кандидаты из visual search
+    Первый image:
+        изображение клиента / Story
+
+    Остальные:
+        TOP-кандидаты из Cloudflare R2
 
     Возвращает:
 
-        {
-            "article": "...",
-            "result": "MATCH"
-        }
+    {
+        "result": "MATCH",
+        "article": "34368"
+    }
 
-    или:
+    либо:
 
-        {
-            "article": None,
-            "result": "NO_MATCH"
-        }
+    {
+        "result": "NO_MATCH",
+        "article": None
+    }
     """
 
     if not candidates:
@@ -95,10 +103,8 @@ def verify_product_with_vision(
             "result": "NO_MATCH",
         }
 
-    content = []
-
     # ==========================================
-    # CANDIDATE ARTICLES
+    # VALID ARTICLES
     # ==========================================
 
     candidate_articles = [
@@ -109,58 +115,61 @@ def verify_product_with_vision(
     ]
 
     # ==========================================
-    # INSTRUCTIONS
+    # PROMPT
     # ==========================================
 
     instruction = f"""
-You are verifying a product match for
-an online fashion store.
+You are verifying whether a customer image
+matches one of the catalog products.
 
 The first image is the CUSTOMER IMAGE.
 
-After it, you will receive catalog images
-for candidate products.
+After that you will receive candidate
+catalog images.
 
-Candidate articles:
+Candidate product articles:
 
 {candidate_articles}
 
-Your task:
+Carefully compare:
+- shape
+- silhouette
+- color
+- material
+- print
+- logo
+- seams
+- neckline
+- sleeves
+- hardware
+- handles
+- proportions
+- distinctive design details
 
-1. Compare the customer image with all
-   candidate products carefully.
+Rules:
 
-2. Pay attention to:
-   - shape
-   - material
-   - color
-   - pattern
-   - logos
-   - seams
-   - handles
-   - hardware
-   - proportions
-   - distinctive details
+1. Choose a candidate only when it represents
+   the same actual product.
 
-3. Do NOT choose a candidate only because
-   the product category or color is similar.
+2. Similar category or similar color alone
+   is NOT enough.
 
-4. If one candidate clearly represents
-   the same product, return its article.
+3. If one candidate clearly matches,
+   return MATCH and its article.
 
-5. If none of the candidates is clearly
-   the same product, return NO_MATCH.
+4. If none clearly matches,
+   return NO_MATCH.
 
-Return ONLY valid JSON.
+Return ONLY JSON.
 
-MATCH example:
+Example:
 
 {{
     "result": "MATCH",
-    "article": "49479"
+    "article": "34368"
 }}
 
-NO MATCH example:
+or:
 
 {{
     "result": "NO_MATCH",
@@ -168,37 +177,31 @@ NO MATCH example:
 }}
 """
 
-    content.append(
+    content = [
         {
             "type": "input_text",
             "text": instruction,
-        }
-    )
-
-    # ==========================================
-    # CUSTOMER IMAGE
-    # ==========================================
-
-    content.append(
+        },
         {
             "type": "input_text",
             "text": "CUSTOMER IMAGE:",
-        }
-    )
-
-    content.append(
+        },
         {
             "type": "input_image",
-            "image_url": image_to_data_url(
-                query_image_path
+            "image_url": (
+                image_to_data_url(
+                    query_image_path
+                )
             ),
             "detail": "high",
-        }
-    )
+        },
+    ]
 
     # ==========================================
-    # CANDIDATES
+    # R2 CANDIDATE IMAGES
     # ==========================================
+
+    added_candidates = []
 
     for index, candidate in enumerate(
         candidates,
@@ -206,40 +209,37 @@ NO MATCH example:
     ):
 
         article = str(
-            candidate[
-                "article"
-            ]
+            candidate["article"]
         )
-
-        # ======================================
-        # WINDOWS -> LINUX PATH FIX
-        # ======================================
 
         matched_image = str(
             candidate[
                 "matched_image"
             ]
-        ).replace(
-            "\\",
-            "/",
         )
 
-        candidate_image_path = (
-            PROJECT_ROOT
-            / matched_image
-        )
+        try:
 
-        if not candidate_image_path.exists():
-
-            print(
-                "Candidate image not found:"
+            image_url = (
+                generate_presigned_image_url(
+                    matched_image,
+                    expires_in=900,
+                )
             )
 
+        except Exception as error:
+
             print(
-                candidate_image_path
+                f"R2 URL error for "
+                f"{article}: {error}"
             )
 
             continue
+
+        print(
+            f"R2 candidate loaded: "
+            f"{article}"
+        )
 
         content.append(
             {
@@ -254,19 +254,33 @@ NO MATCH example:
         content.append(
             {
                 "type": "input_image",
-                "image_url": (
-                    image_to_data_url(
-                        str(
-                            candidate_image_path
-                        )
-                    )
-                ),
+                "image_url": image_url,
                 "detail": "high",
             }
         )
 
+        added_candidates.append(
+            article
+        )
+
     # ==========================================
-    # OPENAI
+    # NO CANDIDATE IMAGES AVAILABLE
+    # ==========================================
+
+    if not added_candidates:
+
+        print(
+            "No R2 candidate images "
+            "could be loaded."
+        )
+
+        return {
+            "article": None,
+            "result": "NO_MATCH",
+        }
+
+    # ==========================================
+    # OPENAI VISION
     # ==========================================
 
     response = client.responses.create(
@@ -296,7 +310,7 @@ NO MATCH example:
     # CLEAN JSON
     # ==========================================
 
-    raw_answer = (
+    cleaned_answer = (
         raw_answer
         .replace(
             "```json",
@@ -312,7 +326,7 @@ NO MATCH example:
     try:
 
         result = json.loads(
-            raw_answer
+            cleaned_answer
         )
 
     except json.JSONDecodeError:
@@ -327,18 +341,19 @@ NO MATCH example:
         }
 
     # ==========================================
-    # SECURITY / VALIDATION
+    # VALIDATION
     # ==========================================
-
-    returned_article = result.get(
-        "article"
-    )
 
     result_type = result.get(
         "result"
     )
 
+    returned_article = result.get(
+        "article"
+    )
+
     if returned_article is not None:
+
         returned_article = str(
             returned_article
         )
@@ -350,14 +365,18 @@ NO MATCH example:
             "result": "NO_MATCH",
         }
 
+    # Проверяем, что AI не придумал
+    # артикул, которого вообще не было
+    # среди реально отправленных кандидатов.
+
     if (
         returned_article
-        not in candidate_articles
+        not in added_candidates
     ):
 
         print(
-            "Vision returned article "
-            "outside candidate list."
+            "Vision returned an article "
+            "outside the provided candidates."
         )
 
         return {

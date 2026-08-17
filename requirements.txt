@@ -6,3 +6,4 @@ requests
 Pillow
 onnxruntime
 numpy
+boto3
