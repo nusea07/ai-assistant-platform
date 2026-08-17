@@ -3,12 +3,25 @@ from pathlib import Path
 
 from flask import Flask, request
 
-from core.assistant_service import process_message_text
-from core.instagram_service import send_instagram_message
-from core.client_registry import get_client
+from core.assistant_service import (
+    process_message_text,
+)
 
-from core.image_download_service import download_image
-from core.product_recognition_service import recognize_product
+from core.instagram_service import (
+    send_instagram_message,
+)
+
+from core.client_registry import (
+    get_client,
+)
+
+from core.image_download_service import (
+    download_image,
+)
+
+from core.product_recognition_service import (
+    recognize_product,
+)
 
 
 app = Flask(__name__)
@@ -18,27 +31,47 @@ app = Flask(__name__)
 # HEALTH CHECK
 # ==========================================================
 
-@app.route("/", methods=["GET"])
+@app.route(
+    "/",
+    methods=["GET"],
+)
 def home():
-    return "AI Assistant Platform is running", 200
+
+    return (
+        "AI Assistant Platform is running",
+        200,
+    )
 
 
 # ==========================================================
 # GENERAL PRIVACY POLICY
 # ==========================================================
 
-@app.route("/privacy", methods=["GET"])
+@app.route(
+    "/privacy",
+    methods=["GET"],
+)
 def privacy_policy():
+
     return """
     <!DOCTYPE html>
     <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>Privacy Policy</title>
+    <head>
+
+        <meta charset="UTF-8">
+
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+
+        <title>
+            Privacy Policy
+        </title>
 
         <style>
+
             body {
                 font-family: Arial, sans-serif;
                 max-width: 850px;
@@ -56,52 +89,70 @@ def privacy_policy():
                 color: #666;
                 margin-bottom: 30px;
             }
+
         </style>
+
     </head>
 
     <body>
 
-        <h1>Privacy Policy</h1>
+        <h1>
+            Privacy Policy
+        </h1>
 
         <p class="updated">
             Last updated: August 17, 2026
         </p>
 
         <p>
-            This Privacy Policy explains how the AI Assistant Platform
-            processes information when interacting with users through
+            This Privacy Policy explains how the
+            AI Assistant Platform processes information
+            when interacting with users through
             Instagram messaging.
         </p>
 
-        <h2>Information We Process</h2>
+        <h2>
+            Information We Process
+        </h2>
 
         <p>
-            The platform may process message content, images and
-            technical identifiers required to provide responses.
+            The platform may process message content,
+            images and technical identifiers required
+            to provide responses.
         </p>
 
-        <h2>How Information Is Used</h2>
+        <h2>
+            How Information Is Used
+        </h2>
 
         <p>
-            Information may be used to answer questions about products
-            and services, identify products, maintain conversation
-            context and transfer conversations to a human representative.
+            Information may be used to answer questions
+            about products and services, identify
+            products, maintain conversation context
+            and transfer conversations to a human
+            representative.
         </p>
 
-        <h2>Third-Party Services</h2>
+        <h2>
+            Third-Party Services
+        </h2>
 
         <p>
-            The platform may use Meta APIs, hosting infrastructure
-            and artificial intelligence services.
+            The platform may use Meta APIs,
+            hosting infrastructure and artificial
+            intelligence services.
         </p>
 
-        <h2>Contact</h2>
+        <h2>
+            Contact
+        </h2>
 
         <p>
             Email: sochina.nadejda@gmail.com
         </p>
 
     </body>
+
     </html>
     """, 200
 
@@ -110,7 +161,10 @@ def privacy_policy():
 # ENERGY PRIVACY POLICY
 # ==========================================================
 
-@app.route("/privacy/energy_fitness", methods=["GET"])
+@app.route(
+    "/privacy/energy_fitness",
+    methods=["GET"],
+)
 def energy_privacy_policy():
 
     return """
@@ -118,30 +172,38 @@ def energy_privacy_policy():
     <html lang="en">
 
     <head>
+
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
 
         <title>
             ENERGY Fitness - Privacy Policy
         </title>
+
     </head>
 
     <body>
 
         <h1>
-            ENERGY Fitness AI Assistant — Privacy Policy
+            ENERGY Fitness AI Assistant —
+            Privacy Policy
         </h1>
 
         <p>
-            The ENERGY Fitness AI Assistant may process Instagram
-            message content and technical identifiers required to
-            provide responses.
+            The ENERGY Fitness AI Assistant may process
+            Instagram message content and technical
+            identifiers required to provide responses.
         </p>
 
         <p>
-            Information is used to answer questions about ENERGY
-            Fitness services and to transfer requests to a human
-            representative when required.
+            Information is used to answer questions
+            about ENERGY Fitness services and to
+            transfer requests to a human representative
+            when required.
         </p>
 
         <p>
@@ -170,23 +232,26 @@ def energy_data_deletion():
     <html lang="en">
 
     <head>
+
         <meta charset="UTF-8">
 
         <title>
             ENERGY Fitness - Data Deletion
         </title>
+
     </head>
 
     <body>
 
         <h1>
-            ENERGY Fitness AI Assistant — Data Deletion
+            ENERGY Fitness AI Assistant —
+            Data Deletion
         </h1>
 
         <p>
-            To request deletion of data associated with your
-            interaction with the ENERGY Fitness AI Assistant,
-            please contact:
+            To request deletion of data associated
+            with your interaction with the ENERGY
+            Fitness AI Assistant, please contact:
         </p>
 
         <p>
@@ -205,50 +270,35 @@ def energy_data_deletion():
 # EXTRACT IMAGE URL
 # ==========================================================
 
-def extract_image_url(message_data: dict):
-    """
-    Пытается найти изображение в Instagram webhook.
-
-    Поддерживаем:
-
-    1. обычное изображение в Direct
-    2. attachment
-    3. некоторые Story reply структуры
-    """
+def extract_image_url(
+    message_data: dict,
+):
 
     # ==========================================
-    # NORMAL ATTACHMENTS
+    # DIRECT ATTACHMENTS
     # ==========================================
 
-    attachments = message_data.get(
-        "attachments",
-        [],
+    attachments = (
+        message_data.get(
+            "attachments",
+            [],
+        )
+        or []
     )
 
     for attachment in attachments:
 
-        attachment_type = attachment.get(
-            "type",
-            "",
+        payload = (
+            attachment.get(
+                "payload",
+                {},
+            )
+            or {}
         )
-
-        payload = attachment.get(
-            "payload",
-            {},
-        ) or {}
 
         image_url = payload.get(
             "url"
         )
-
-        if (
-            attachment_type == "image"
-            and image_url
-        ):
-            return image_url
-
-        # Иногда URL может быть доступен
-        # даже если type отличается.
 
         if image_url:
             return image_url
@@ -257,15 +307,21 @@ def extract_image_url(message_data: dict):
     # STORY REPLY
     # ==========================================
 
-    reply_to = message_data.get(
-        "reply_to",
-        {},
-    ) or {}
+    reply_to = (
+        message_data.get(
+            "reply_to",
+            {},
+        )
+        or {}
+    )
 
-    story = reply_to.get(
-        "story",
-        {},
-    ) or {}
+    story = (
+        reply_to.get(
+            "story",
+            {},
+        )
+        or {}
+    )
 
     if isinstance(
         story,
@@ -273,8 +329,12 @@ def extract_image_url(message_data: dict):
     ):
 
         story_url = (
-            story.get("url")
-            or story.get("media_url")
+            story.get(
+                "url"
+            )
+            or story.get(
+                "media_url"
+            )
         )
 
         if story_url:
@@ -290,19 +350,6 @@ def extract_image_url(message_data: dict):
 def recognize_dofamin_image(
     image_url: str,
 ):
-    """
-    Instagram image URL
-        ↓
-    download
-        ↓
-    CLIP
-        ↓
-    TOP-3
-        ↓
-    Vision
-        ↓
-    article
-    """
 
     local_image_path = None
 
@@ -320,13 +367,10 @@ def recognize_dofamin_image(
             "Downloading image..."
         )
 
-        local_image_path = download_image(
-            image_url
-        )
-
-        print(
-            f"Temporary image: "
-            f"{local_image_path}"
+        local_image_path = (
+            download_image(
+                image_url
+            )
         )
 
         print(
@@ -340,7 +384,7 @@ def recognize_dofamin_image(
         if article:
 
             print(
-                f"✅ PRODUCT RECOGNIZED: "
+                "✅ PRODUCT RECOGNIZED: "
                 f"{article}"
             )
 
@@ -392,7 +436,9 @@ def recognize_dofamin_image(
     "/webhook/<client_id>",
     methods=["GET"],
 )
-def verify_webhook(client_id: str):
+def verify_webhook(
+    client_id: str,
+):
 
     client_config = get_client(
         client_id
@@ -405,9 +451,11 @@ def verify_webhook(client_id: str):
             404,
         )
 
-    verify_token_env = client_config[
-        "verify_token_env"
-    ]
+    verify_token_env = (
+        client_config[
+            "verify_token_env"
+        ]
+    )
 
     expected_token = os.getenv(
         verify_token_env
@@ -442,11 +490,6 @@ def verify_webhook(client_id: str):
 
         return challenge, 200
 
-    print(
-        f"[{client_id}] "
-        "Webhook verification FAILED"
-    )
-
     return (
         "Forbidden",
         403,
@@ -461,18 +504,15 @@ def verify_webhook(client_id: str):
     "/webhook/<client_id>",
     methods=["POST"],
 )
-def receive_webhook(client_id: str):
+def receive_webhook(
+    client_id: str,
+):
 
     client_config = get_client(
         client_id
     )
 
     if client_config is None:
-
-        print(
-            f"Unknown client: "
-            f"{client_id}"
-        )
 
         return (
             "EVENT_RECEIVED",
@@ -516,36 +556,34 @@ def receive_webhook(client_id: str):
 
         for entry in entries:
 
-            messaging_events = entry.get(
-                "messaging",
-                [],
+            messaging_events = (
+                entry.get(
+                    "messaging",
+                    [],
+                )
             )
 
             for event in messaging_events:
 
-                # ==========================================
+                # ======================================
                 # IDS
-                # ==========================================
-
-                sender = event.get(
-                    "sender",
-                    {},
-                )
-
-                recipient = event.get(
-                    "recipient",
-                    {},
-                )
+                # ======================================
 
                 sender_id = str(
-                    sender.get(
+                    event.get(
+                        "sender",
+                        {},
+                    ).get(
                         "id",
                         "",
                     )
                 ).strip()
 
                 recipient_id = str(
-                    recipient.get(
+                    event.get(
+                        "recipient",
+                        {},
+                    ).get(
                         "id",
                         "",
                     )
@@ -554,9 +592,9 @@ def receive_webhook(client_id: str):
                 if not sender_id:
                     continue
 
-                # ==========================================
+                # ======================================
                 # IGNORE OWN MESSAGES
-                # ==========================================
+                # ======================================
 
                 instagram_account_env = (
                     client_config[
@@ -564,9 +602,11 @@ def receive_webhook(client_id: str):
                     ]
                 )
 
-                business_account_id = os.getenv(
-                    instagram_account_env,
-                    "",
+                business_account_id = (
+                    os.getenv(
+                        instagram_account_env,
+                        "",
+                    )
                 )
 
                 if (
@@ -582,12 +622,14 @@ def receive_webhook(client_id: str):
 
                     continue
 
-                # ==========================================
+                # ======================================
                 # MESSAGE
-                # ==========================================
+                # ======================================
 
-                message_data = event.get(
-                    "message"
+                message_data = (
+                    event.get(
+                        "message"
+                    )
                 )
 
                 if not message_data:
@@ -606,18 +648,17 @@ def receive_webhook(client_id: str):
                     or ""
                 ).strip()
 
-                # ==========================================
+                # ======================================
                 # IMAGE
-                # ==========================================
+                # ======================================
 
-                image_url = extract_image_url(
-                    message_data
+                image_url = (
+                    extract_image_url(
+                        message_data
+                    )
                 )
 
                 recognized_article = None
-
-                # Пока visual recognition
-                # включаем ТОЛЬКО для DOFAMIN.
 
                 if (
                     client_id == "dofamin"
@@ -630,56 +671,20 @@ def receive_webhook(client_id: str):
                         )
                     )
 
-                # ==========================================
-                # NO TEXT AND NO PRODUCT
-                # ==========================================
+                # ======================================
+                # NOTHING TO PROCESS
+                # ======================================
 
                 if (
                     not message_text
                     and not recognized_article
                 ):
 
-                    print(
-                        f"[{client_id}] "
-                        "No usable text/product."
-                    )
-
                     continue
 
-                # ==========================================
-                # BUILD MESSAGE FOR ASSISTANT
-                # ==========================================
-
-                effective_message = (
-                    message_text
-                )
-
-                if recognized_article:
-
-                    if message_text:
-
-                        effective_message = (
-                            f"Клиент говорит о товаре "
-                            f"с артикулом "
-                            f"{recognized_article}. "
-                            f"Вопрос клиента: "
-                            f"{message_text}"
-                        )
-
-                    else:
-
-                        # Если пользователь отправил
-                        # только фотографию.
-
-                        effective_message = (
-                            f"Клиент отправил фотографию "
-                            f"товара с артикулом "
-                            f"{recognized_article}."
-                        )
-
-                # ==========================================
+                # ======================================
                 # DEBUG
-                # ==========================================
+                # ======================================
 
                 print(
                     f"\n🏢 BUSINESS: "
@@ -692,36 +697,32 @@ def receive_webhook(client_id: str):
                 )
 
                 print(
-                    f"📨 TO: "
-                    f"{recipient_id}"
-                )
-
-                print(
-                    f"💬 ORIGINAL MESSAGE: "
+                    f"💬 MESSAGE: "
                     f"{message_text}"
                 )
 
                 if recognized_article:
 
                     print(
-                        f"🛍 RECOGNIZED ARTICLE: "
+                        "👁 INTERNAL ARTICLE: "
                         f"{recognized_article}"
                     )
 
-                print(
-                    f"🧠 EFFECTIVE MESSAGE: "
-                    f"{effective_message}"
-                )
-
-                # ==========================================
+                # ======================================
                 # ASSISTANT
-                # ==========================================
+                #
+                # Article передаётся ОТДЕЛЬНО.
+                # Клиент его не видит.
+                # ======================================
 
                 assistant_response = (
                     process_message_text(
                         client_id=client_id,
                         instagram_user_id=sender_id,
-                        message=effective_message,
+                        message=message_text,
+                        recognized_article=(
+                            recognized_article
+                        ),
                     )
                 )
 
@@ -739,9 +740,9 @@ def receive_webhook(client_id: str):
                     f"{assistant_response}"
                 )
 
-                # ==========================================
-                # SEND TO INSTAGRAM
-                # ==========================================
+                # ======================================
+                # SEND
+                # ======================================
 
                 send_instagram_message(
                     client_id=client_id,
@@ -753,7 +754,7 @@ def receive_webhook(client_id: str):
 
         print(
             f"[{client_id}] "
-            f"Webhook processing error:"
+            "Webhook processing error:"
         )
 
         print(
@@ -767,14 +768,16 @@ def receive_webhook(client_id: str):
 
 
 # ==========================================================
-# LOCAL / RENDER TEST
+# TEST ENDPOINT
 # ==========================================================
 
 @app.route(
     "/test/<client_id>",
     methods=["POST"],
 )
-def test_assistant(client_id: str):
+def test_assistant(
+    client_id: str,
+):
 
     client_config = get_client(
         client_id
@@ -807,11 +810,27 @@ def test_assistant(client_id: str):
         )
     ).strip()
 
-    if not message:
+    recognized_article = (
+        data.get(
+            "recognized_article"
+        )
+    )
+
+    if recognized_article is not None:
+
+        recognized_article = str(
+            recognized_article
+        ).strip()
+
+    if (
+        not message
+        and not recognized_article
+    ):
 
         return {
             "error": (
-                "Field 'message' "
+                "Field 'message' or "
+                "'recognized_article' "
                 "is required"
             )
         }, 400
@@ -820,12 +839,18 @@ def test_assistant(client_id: str):
         client_id=client_id,
         instagram_user_id=user_id,
         message=message,
+        recognized_article=(
+            recognized_article
+        ),
     )
 
     return {
         "client_id": client_id,
         "user_id": user_id,
         "message": message,
+        "recognized_article": (
+            recognized_article
+        ),
         "answer": answer,
     }, 200
 

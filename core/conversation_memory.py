@@ -42,6 +42,7 @@ def ensure_storage() -> None:
     )
 
     if not CONVERSATIONS_FILE.exists():
+
         CONVERSATIONS_FILE.write_text(
             "{}",
             encoding="utf-8",
@@ -53,10 +54,13 @@ def ensure_storage() -> None:
 # ==========================================================
 
 def load_conversations() -> dict:
+
     ensure_storage()
 
     with _file_lock:
+
         try:
+
             text = CONVERSATIONS_FILE.read_text(
                 encoding="utf-8"
             ).strip()
@@ -64,12 +68,18 @@ def load_conversations() -> dict:
             if not text:
                 return {}
 
-            data = json.loads(text)
+            data = json.loads(
+                text
+            )
 
-            if isinstance(data, dict):
+            if isinstance(
+                data,
+                dict,
+            ):
                 return data
 
         except Exception as error:
+
             print(
                 "Ошибка чтения "
                 f"conversations.json: {error}"
@@ -82,8 +92,7 @@ def save_conversations(
     conversations: dict,
 ) -> None:
     """
-    Сохраняет данные через временный файл,
-    чтобы уменьшить риск повреждения JSON.
+    Сохраняет данные через временный файл.
     """
 
     ensure_storage()
@@ -95,7 +104,9 @@ def save_conversations(
     )
 
     with _file_lock:
+
         try:
+
             temp_file.write_text(
                 json.dumps(
                     conversations,
@@ -111,6 +122,7 @@ def save_conversations(
             )
 
         except Exception as error:
+
             print(
                 "Ошибка сохранения "
                 f"conversations.json: {error}"
@@ -122,6 +134,7 @@ def save_conversations(
 # ==========================================================
 
 def get_timestamp() -> str:
+
     return datetime.now(
         timezone.utc
     ).isoformat()
@@ -142,15 +155,21 @@ def ensure_conversation(
     ).strip()
 
     if client_id not in conversations:
-        conversations[client_id] = {}
+
+        conversations[
+            client_id
+        ] = {}
 
     client_conversations = (
-        conversations[client_id]
+        conversations[
+            client_id
+        ]
     )
 
     if instagram_user_id not in (
         client_conversations
     ):
+
         client_conversations[
             instagram_user_id
         ] = {
@@ -174,7 +193,9 @@ def get_memory(
     instagram_user_id: str,
 ) -> dict:
 
-    conversations = load_conversations()
+    conversations = (
+        load_conversations()
+    )
 
     memory = ensure_conversation(
         conversations,
@@ -203,7 +224,10 @@ def get_current_product(
         "current_product"
     )
 
-    if isinstance(product, dict):
+    if isinstance(
+        product,
+        dict,
+    ):
         return product
 
     return None
@@ -215,7 +239,9 @@ def set_current_product(
     product: dict | None,
 ) -> None:
 
-    conversations = load_conversations()
+    conversations = (
+        load_conversations()
+    )
 
     memory = ensure_conversation(
         conversations,
@@ -223,8 +249,13 @@ def set_current_product(
         instagram_user_id,
     )
 
-    memory["current_product"] = product
-    memory["updated_at"] = get_timestamp()
+    memory[
+        "current_product"
+    ] = product
+
+    memory[
+        "updated_at"
+    ] = get_timestamp()
 
     save_conversations(
         conversations
@@ -240,6 +271,64 @@ def clear_current_product(
         client_id=client_id,
         instagram_user_id=instagram_user_id,
         product=None,
+    )
+
+
+# ==========================================================
+# NEW PRODUCT CONTEXT
+# ==========================================================
+
+def start_new_product_context(
+    client_id: str,
+    instagram_user_id: str,
+    product: dict,
+) -> None:
+    """
+    Используется, когда товар был распознан
+    по новой фотографии / новой Story.
+
+    Новый товар получает абсолютный приоритет.
+
+    Старый товар, история про предыдущий товар
+    и временный state сбрасываются.
+    """
+
+    conversations = (
+        load_conversations()
+    )
+
+    memory = ensure_conversation(
+        conversations,
+        client_id,
+        instagram_user_id,
+    )
+
+    memory[
+        "current_product"
+    ] = product
+
+    # Критически важно:
+    # новая фотография означает новый
+    # товарный контекст.
+    memory[
+        "history"
+    ] = []
+
+    memory[
+        "state"
+    ] = None
+
+    memory[
+        "updated_at"
+    ] = get_timestamp()
+
+    save_conversations(
+        conversations
+    )
+
+    print(
+        "🆕 NEW PRODUCT CONTEXT: "
+        f"{product.get('name')}"
     )
 
 
@@ -262,7 +351,9 @@ def get_state(
     )
 
     if state:
-        return str(state)
+        return str(
+            state
+        )
 
     return None
 
@@ -273,7 +364,9 @@ def set_state(
     state: str | None,
 ) -> None:
 
-    conversations = load_conversations()
+    conversations = (
+        load_conversations()
+    )
 
     memory = ensure_conversation(
         conversations,
@@ -281,8 +374,13 @@ def set_state(
         instagram_user_id,
     )
 
-    memory["state"] = state
-    memory["updated_at"] = get_timestamp()
+    memory[
+        "state"
+    ] = state
+
+    memory[
+        "updated_at"
+    ] = get_timestamp()
 
     save_conversations(
         conversations
@@ -319,7 +417,9 @@ def add_message(
     if not text:
         return
 
-    conversations = load_conversations()
+    conversations = (
+        load_conversations()
+    )
 
     memory = ensure_conversation(
         conversations,
@@ -331,7 +431,10 @@ def add_message(
         "history"
     )
 
-    if not isinstance(history, list):
+    if not isinstance(
+        history,
+        list,
+    ):
         history = []
 
     history.append(
@@ -342,14 +445,17 @@ def add_message(
         }
     )
 
-    # Храним только последние сообщения,
-    # чтобы память не росла бесконечно.
     history = history[
         -MAX_HISTORY_MESSAGES:
     ]
 
-    memory["history"] = history
-    memory["updated_at"] = get_timestamp()
+    memory[
+        "history"
+    ] = history
+
+    memory[
+        "updated_at"
+    ] = get_timestamp()
 
     save_conversations(
         conversations
@@ -371,7 +477,10 @@ def get_history(
         [],
     )
 
-    if isinstance(history, list):
+    if isinstance(
+        history,
+        list,
+    ):
         return history
 
     return []
@@ -397,26 +506,30 @@ def get_conversation_context(
     lines = []
 
     for item in history:
+
         role = item.get(
             "role",
-            ""
+            "",
         )
 
         text = item.get(
             "text",
-            ""
+            "",
         )
 
         if not text:
             continue
 
         if role == "user":
+
             label = "Клиент"
 
         elif role == "assistant":
+
             label = "Ассистент"
 
         else:
+
             label = role
 
         lines.append(
@@ -437,10 +550,14 @@ def clear_conversation(
     instagram_user_id: str,
 ) -> None:
 
-    conversations = load_conversations()
+    conversations = (
+        load_conversations()
+    )
 
-    client_data = conversations.get(
-        client_id
+    client_data = (
+        conversations.get(
+            client_id
+        )
     )
 
     if not isinstance(
@@ -450,7 +567,9 @@ def clear_conversation(
         return
 
     client_data.pop(
-        str(instagram_user_id),
+        str(
+            instagram_user_id
+        ),
         None,
     )
 
