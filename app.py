@@ -873,9 +873,9 @@ def test_assistant(
 # Example:
 # https://ai-assistant-platform-mq4h.onrender.com/instagram/oauth/callback
 #
-# This diagnostic flow does NOT persist or display an access token.
-# It proves that the OAuth code exchange succeeded and shows a safe
-# account identifier. It does not yet connect Direct messages.
+# After Instagram Login this saves a *long-lived* token encrypted in Postgres.
+# It does not print tokens or connect Direct messages automatically.
+# Restrict use to INSTAGRAM_OAUTH_ALLOWED_USER_ID during testing.
 
 _OAUTH_SCOPES = (
     "instagram_business_basic,instagram_business_manage_messages"
@@ -954,13 +954,45 @@ def instagram_oauth_callback():
         )
     if not result.get("access_token"):
         return "Instagram returned no access token.", 502
-    ig_id = str(result.get("user_id", "unknown"))
-    # Deliberately do not print, store, or show the access token.
+    ig_id = str(result.get("user_id", ""))
+    allowed_id = os.getenv("INSTAGRAM_OAUTH_ALLOWED_USER_ID", "").strip()
+    # During development, reject all accounts except the explicit test user.
+    if not allowed_id or not secrets.compare_digest(ig_id, allowed_id):
+        return "Instagram account is not approved for this test.", 403
+
+    short_token = result["access_token"]
+    # Exchange the one-hour token for a longer-lived token before storage.
+    exchange_query = urlencode({
+        "grant_type": "ig_exchange_token",
+        "client_secret": client_secret,
+        "access_token": short_token,
+    })
+    exchange_request = Request(
+        "https://graph.instagram.com/access_token?" + exchange_query,
+        method="GET",
+    )
+    try:
+        with urlopen(exchange_request, timeout=20) as response:
+            long_result = json.loads(response.read().decode("utf-8"))
+        long_token = long_result["access_token"]
+        expires_in = int(long_result["expires_in"])
+    except (HTTPError, URLError, TimeoutError, ValueError, KeyError, TypeError):
+        # Never store a short-lived token as though it were a 60-day token.
+        return "Instagram authorized, but long-lived token exchange failed.", 502
+
+    try:
+        from oauth_token_store import save_token
+        expiry = save_token(ig_id, long_token, expires_in)
+    except Exception:
+        # In particular never dump DB exception details or credentials.
+        return "Instagram authorized, but secure database storage failed.", 503
+
     return (
-        "Instagram OAuth SUCCESS. "
-        "Authorization code exchanged for a token. "
+        "Instagram connected successfully. "
         "Instagram user ID: " + ig_id + ". "
-        "The temporary token was discarded for this safety test.",
+        "Encrypted token saved. "
+        "Expires (UTC): " + expiry.strftime("%Y-%m-%d %H:%M") + ". "
+        "Direct messages are not connected yet.",
         200,
     )
 
