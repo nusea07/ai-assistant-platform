@@ -1,7 +1,12 @@
 import os
 from pathlib import Path
+import secrets
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+import json
 
-from flask import Flask, request
+from flask import Flask, request, redirect, session
 
 from core.assistant_service import (
     process_message_text,
@@ -25,6 +30,8 @@ from core.product_recognition_service import (
 
 
 app = Flask(__name__)
+app.secret_key = os.getenv("OAUTH_SESSION_SECRET")
+app.config.update(SESSION_COOKIE_SECURE=True, SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
 
 # ==========================================================
@@ -853,6 +860,109 @@ def test_assistant(
         ),
         "answer": answer,
     }, 200
+
+
+# ==========================================================
+# INSTAGRAM LOGIN OAUTH TEST (INDEPENDENT OF EXISTING WEBHOOKS)
+# ==========================================================
+# Set these on Render > Environment (do not put secrets in GitHub):
+# INSTAGRAM_APP_ID = Instagram App ID (NOT Meta/Facebook App ID)
+# INSTAGRAM_APP_SECRET = Instagram App Secret
+# OAUTH_SESSION_SECRET = long random secret for signing test session
+# INSTAGRAM_OAUTH_REDIRECT_URI = exact approved Instagram Login redirect URL
+# Example:
+# https://ai-assistant-platform-mq4h.onrender.com/instagram/oauth/callback
+#
+# This diagnostic flow does NOT persist or display an access token.
+# It proves that the OAuth code exchange succeeded and shows a safe
+# account identifier. It does not yet connect Direct messages.
+
+_OAUTH_SCOPES = (
+    "instagram_business_basic,instagram_business_manage_messages"
+)
+
+
+def _oauth_settings():
+    return (
+        os.getenv("INSTAGRAM_APP_ID", "").strip(),
+        os.getenv("INSTAGRAM_APP_SECRET", "").strip(),
+        os.getenv("INSTAGRAM_OAUTH_REDIRECT_URI", "").strip(),
+        os.getenv("OAUTH_SESSION_SECRET", "").strip(),
+    )
+
+
+@app.route("/instagram/oauth/start", methods=["GET"])
+def instagram_oauth_start():
+    client_id, client_secret, callback, cookie_secret = _oauth_settings()
+    if not all((client_id, client_secret, callback, cookie_secret)):
+        return "Instagram OAuth test is not configured on this server.", 503
+    if not callback.startswith("https://"):
+        return "Redirect URI must be HTTPS.", 503
+    # Flask signs this browser cookie; use a stable secret across deployments.
+    state = secrets.token_urlsafe(32)
+    session["instagram_oauth_state"] = state
+    params = urlencode({
+        "client_id": client_id,
+        "redirect_uri": callback,
+        "response_type": "code",
+        "scope": _OAUTH_SCOPES,
+        "state": state,
+    })
+    return redirect("https://www.instagram.com/oauth/authorize?" + params)
+
+
+@app.route("/instagram/oauth/callback", methods=["GET"])
+def instagram_oauth_callback():
+    client_id, client_secret, callback, cookie_secret = _oauth_settings()
+    if not all((client_id, client_secret, callback, cookie_secret)):
+        return "Instagram OAuth test is not configured on this server.", 503
+    state = request.args.get("state", "")
+    expected_state = session.pop("instagram_oauth_state", None)
+    if not expected_state or not secrets.compare_digest(state, expected_state):
+        return "OAuth state mismatch. Restart from /instagram/oauth/start.", 400
+    if request.args.get("error"):
+        return "Instagram did not grant access. Check consent and account role.", 400
+    code = request.args.get("code", "")
+    if not code:
+        return "No authorization code received from Instagram.", 400
+    # Meta can append '#_' to codes; fragments are removed from HTTP URLs.
+    # Some integrations report a code suffixed with '#_' in other contexts.
+    code = code.removesuffix("#_")
+    body = urlencode({
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "authorization_code",
+        "redirect_uri": callback,
+        "code": code,
+    }).encode("utf-8")
+    req = Request(
+        "https://api.instagram.com/oauth/access_token",
+        data=body,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+    try:
+        with urlopen(req, timeout=20) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, ValueError):
+        # Never echo Meta's full error: it can contain request details.
+        return (
+            "Instagram authorization code exchange failed. "
+            "Check that Redirect URI is saved in Meta and matches exactly, "
+            "and that this code was not used before.",
+            502,
+        )
+    if not result.get("access_token"):
+        return "Instagram returned no access token.", 502
+    ig_id = str(result.get("user_id", "unknown"))
+    # Deliberately do not print, store, or show the access token.
+    return (
+        "Instagram OAuth SUCCESS. "
+        "Authorization code exchanged for a token. "
+        "Instagram user ID: " + ig_id + ". "
+        "The temporary token was discarded for this safety test.",
+        200,
+    )
 
 
 # ==========================================================
