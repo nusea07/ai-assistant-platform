@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 import json
+import hmac
+import hashlib
 
 from flask import Flask, request, redirect, session
 
@@ -995,6 +997,45 @@ def instagram_oauth_callback():
         "Direct messages are not connected yet.",
         200,
     )
+
+
+# ==========================================================
+# INSTAGRAM LOGIN WEBHOOK (separate from legacy client webhooks)
+# ==========================================================
+
+@app.route("/instagram/webhook", methods=["GET"])
+def instagram_login_webhook_verify():
+    expected = os.getenv("INSTAGRAM_WEBHOOK_VERIFY_TOKEN", "").strip()
+    provided = request.args.get("hub.verify_token", "")
+    challenge = request.args.get("hub.challenge", "")
+    mode = request.args.get("hub.mode", "")
+    if (expected and mode == "subscribe" and challenge
+            and hmac.compare_digest(provided, expected)):
+        return challenge, 200, {"Content-Type": "text/plain; charset=utf-8"}
+    return "Forbidden", 403
+
+
+@app.route("/instagram/webhook", methods=["POST"])
+def instagram_login_webhook_receive():
+    # The secret must be the Instagram App Secret matching the configured app.
+    app_secret = os.getenv("INSTAGRAM_APP_SECRET", "").strip()
+    if not app_secret:
+        return "Webhook not configured", 503
+    signature = request.headers.get("X-Hub-Signature-256", "")
+    raw_payload = request.get_data(cache=True)
+    expected_signature = "sha256=" + hmac.new(
+        app_secret.encode("utf-8"), raw_payload, hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        return "Invalid signature", 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return "Invalid payload", 400
+    if data.get("object") != "instagram":
+        return "Unsupported object", 400
+    # Test mode: acknowledge signed events only. No message text, sender IDs,
+    # or raw payloads are logged, and no automatic replies are sent yet.
+    return "EVENT_RECEIVED", 200
 
 
 # ==========================================================
