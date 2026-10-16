@@ -7,3 +7,5 @@ Pillow
 onnxruntime
 numpy
 boto3
+psycopg[binary]
+cryptography
