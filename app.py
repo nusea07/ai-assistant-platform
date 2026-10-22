@@ -7,6 +7,7 @@ from urllib.error import HTTPError, URLError
 import json
 import hmac
 import hashlib
+from flask import Response
 
 from flask import Flask, request, redirect, session
 
@@ -32,6 +33,18 @@ from core.product_recognition_service import (
 
 
 app = Flask(__name__)
+@app.route("/robots.txt", methods=["GET"])
+def robots_txt():
+    return Response(
+        "User-agent: facebookexternalhit\n"
+        "Allow: /privacy\n"
+        "Allow: /data-deletion\n"
+        "\n"
+        "User-agent: *\n"
+        "Allow: /privacy\n"
+        "Allow: /data-deletion\n",
+        mimetype="text/plain"
+    )
 app.secret_key = os.getenv("OAUTH_SESSION_SECRET")
 app.config.update(SESSION_COOKIE_SECURE=True, SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 
