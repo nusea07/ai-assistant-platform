@@ -167,6 +167,58 @@ def privacy_policy():
 
 
 # ==========================================================
+# GENERAL DATA DELETION INSTRUCTIONS
+# ==========================================================
+
+@app.route("/data-deletion", methods=["GET"])
+def data_deletion_instructions():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Data Deletion Instructions | UNIVERSAL AI ASSISTANT</title>
+        <style>
+            body {font-family: Arial, sans-serif; max-width: 850px;
+                  margin: 40px auto; padding: 0 20px; line-height: 1.65;
+                  color: #222;}
+            h1, h2 {color: #111;}
+            a {color: #1558b0;}
+        </style>
+    </head>
+    <body>
+        <h1>Data Deletion Instructions</h1>
+        <p>These instructions apply to UNIVERSAL AI ASSISTANT
+           (AI Assistant Platform), which supports Instagram messaging
+           for participating businesses.</p>
+        <h2>How to request deletion</h2>
+        <p>To request deletion of personal data associated with your
+           interactions with the AI assistant, send an email to
+           <a href="mailto:sochina.nadejda@gmail.com">sochina.nadejda@gmail.com</a>
+           with the subject <strong>Data Deletion Request</strong>.</p>
+        <p>Please include the Instagram username used in the interaction
+           and, if known, the business account you contacted. Do not
+           include your password, access tokens, or other sensitive login
+           information.</p>
+        <h2>What happens next</h2>
+        <p>We will use the details you provide to identify applicable
+           information, verify the request when necessary, and respond
+           with the available deletion steps. Some information may need
+           to be retained where required by law or for legitimate
+           security purposes.</p>
+        <p>Removing app access in Instagram or Meta settings revokes
+           future access but does not by itself guarantee deletion of
+           information already processed. Please email us to request
+           deletion of previously processed data.</p>
+        <h2>Contact</h2>
+        <p><a href="mailto:sochina.nadejda@gmail.com">sochina.nadejda@gmail.com</a></p>
+    </body>
+    </html>
+    """, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+
+# ==========================================================
 # ENERGY PRIVACY POLICY
 # ==========================================================
 
